@@ -1,5 +1,5 @@
 import XCTest
-@testable import AI_Photo_Optimizer
+@testable import CleanShots
 
 final class PhotoMutationServiceTests: XCTestCase {
     /// Deleting nothing is a no-op success — guards the cleanup flow against

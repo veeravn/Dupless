@@ -26,7 +26,7 @@ struct ChangeCleanupModeIntent: AppIntent {
         if mode == .aggressive || mode == .droneBurst {
             let name = DedupeModeAppEnum.caseDisplayRepresentations[mode]?.title ?? "this mode"
             try await requestConfirmation(
-                result: .result(dialog: "Switch to \(name) mode? It suggests more removals for you to review.")
+                dialog: "Switch to \(name) mode? It suggests more removals for you to review."
             )
         }
         AppSettings.defaultSensitivity = mode.sensitivity
@@ -53,7 +53,7 @@ struct CreateBestShotsAlbumIntent: AppIntent {
 
         if identifiers.count > Self.confirmationThreshold {
             try await requestConfirmation(
-                result: .result(dialog: "Create an album with \(identifiers.count) best shots?")
+                dialog: "Create an album with \(identifiers.count) best shots?"
             )
         }
 

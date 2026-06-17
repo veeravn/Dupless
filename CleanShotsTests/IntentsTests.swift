@@ -1,6 +1,6 @@
 import XCTest
 import SwiftData
-@testable import AI_Photo_Optimizer
+@testable import CleanShots
 
 @MainActor
 final class IntentsTests: XCTestCase {

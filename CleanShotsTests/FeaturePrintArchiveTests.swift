@@ -1,6 +1,6 @@
 import XCTest
 import Vision
-@testable import AI_Photo_Optimizer
+@testable import CleanShots
 
 /// Vision's image feature-print model is not available on all simulators (it
 /// returns nil there), so the app intentionally falls back to perceptual-hash

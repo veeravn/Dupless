@@ -1,5 +1,5 @@
 import XCTest
-@testable import AI_Photo_Optimizer
+@testable import CleanShots
 
 final class BlockingKeyTests: XCTestCase {
     private func date(_ iso: String) -> Date {

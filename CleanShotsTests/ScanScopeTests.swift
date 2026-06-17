@@ -1,5 +1,5 @@
 import XCTest
-@testable import AI_Photo_Optimizer
+@testable import CleanShots
 
 final class ScanScopeTests: XCTestCase {
     func testSignaturesAreDistinctPerScope() {

@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftData
 
 /// The work a progress screen performs: a fresh scan or a resumed one.
 enum ScanJob {

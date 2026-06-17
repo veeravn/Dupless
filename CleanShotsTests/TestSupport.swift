@@ -1,5 +1,5 @@
 import UIKit
-@testable import AI_Photo_Optimizer
+@testable import CleanShots
 
 /// Image helpers for analysis tests. Patterns (not solid colors) are used where
 /// a perceptual hash needs gradients to be meaningful.

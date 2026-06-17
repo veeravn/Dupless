@@ -16,7 +16,10 @@
       "Bash(git rev-parse *)",
       "Bash(ls Intents)",
       "Bash(ls Ranking)",
-      "Bash(ls ../CleanShotsTests)"
+      "Bash(ls ../CleanShotsTests)",
+      "Bash(cd \"/Users/veerav/Documents/CleanShots\"; echo \"=== git status ===\"; git rev-parse --is-inside-work-tree 2>/dev/null && git log --oneline -5 2>/dev/null; git status -s | head; echo; echo \"=== design spec files ===\"; ls \"/Users/veerav/Downloads/cleanshots_ios27_design_spec/\" 2>/dev/null)",
+      "Bash(echo \"exit=$?\")",
+      "Bash(xcodebuild -version)"
     ]
   }
 }
