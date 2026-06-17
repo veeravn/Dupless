@@ -1,0 +1,204 @@
+import Photos
+import SwiftData
+import SwiftUI
+
+/// Review a single group with MVP 2 smart ranking: a recommended best-shot
+/// keeper, quality badges, protection reasons, and a protection-aware default
+/// selection. Every choice is overridable (manual review required).
+struct DuplicateGroupDetailView: View {
+    let group: DuplicateGroupRecord
+
+    @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var assets: [PHAsset] = []
+    @State private var ranking: GroupRanking?
+    @State private var removalSelection: Set<String> = []
+    @State private var showConfirmation = false
+
+    private let columns = [GridItem(.adaptive(minimum: 110), spacing: 8)]
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                if let keeperID = ranking?.keeperIdentifier, let badges = ranking?.badges[keeperID] {
+                    RecommendationCard(text: RecommendationText.keeperSummary(badges: badges))
+                }
+
+                LazyVGrid(columns: columns, spacing: 8) {
+                    ForEach(assets, id: \.localIdentifier) { asset in
+                        let id = asset.localIdentifier
+                        PhotoChoiceCell(
+                            asset: asset,
+                            isKeeper: id == ranking?.keeperIdentifier,
+                            isMarkedForRemoval: removalSelection.contains(id),
+                            badges: ranking?.badges[id] ?? []
+                        )
+                        .onTapGesture { toggle(id) }
+                    }
+                }
+            }
+            .padding()
+        }
+        .navigationTitle("\(Int(group.confidence * 100))% Match")
+        .navigationBarTitleDisplayMode(.inline)
+        .safeAreaInset(edge: .bottom) { bottomBar }
+        .sheet(isPresented: $showConfirmation) {
+            CleanupConfirmationView(count: removalSelection.count) {
+                await performCleanup()
+            }
+            .presentationDetents([.medium])
+        }
+        .task { await loadRanking() }
+    }
+
+    @ViewBuilder
+    private var bottomBar: some View {
+        VStack(spacing: 6) {
+            if protectedCount > 0 {
+                Label("\(protectedCount) protected and kept", systemImage: "lock.fill")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Button(role: .destructive) {
+                showConfirmation = true
+            } label: {
+                Text(removalSelection.isEmpty
+                     ? "Select photos to remove"
+                     : "Move \(removalSelection.count) to Recently Deleted")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.large)
+            .disabled(removalSelection.isEmpty)
+        }
+        .padding()
+        .background(.bar)
+    }
+
+    private var protectedCount: Int { ranking?.protectedIdentifiers.count ?? 0 }
+
+    private func toggle(_ id: String) {
+        if removalSelection.contains(id) { removalSelection.remove(id) }
+        else { removalSelection.insert(id) }
+    }
+
+    private func loadRanking() async {
+        assets = AssetResolver.assets(for: group.memberIdentifiers)
+        let cached = cachedAnalyses(for: group.memberIdentifiers)
+        let rankables = group.memberIdentifiers.compactMap { cached[$0]?.rankablePhoto }
+        let result = BestShotRanker().rank(rankables)
+        ranking = result
+        // Protection-aware default: pre-select only the suggested (non-protected) removals.
+        removalSelection = Set(result.suggestedRemovalIdentifiers)
+    }
+
+    private func cachedAnalyses(for ids: [String]) -> [String: CachedAnalysis] {
+        let wanted = Set(ids)
+        let descriptor = FetchDescriptor<ImageFeatureRecord>(
+            predicate: #Predicate { wanted.contains($0.assetLocalIdentifier) }
+        )
+        let records = (try? modelContext.fetch(descriptor)) ?? []
+        return Dictionary(uniqueKeysWithValues: records.map { ($0.assetLocalIdentifier, $0.cachedAnalysis) })
+    }
+
+    private func performCleanup() async -> PhotoMutationService.Result {
+        let result = await PhotoMutationService().moveToRecentlyDeleted(Array(removalSelection))
+        if result == .success {
+            modelContext.delete(group)
+            try? modelContext.save()
+            dismiss()
+        }
+        return result
+    }
+}
+
+/// The recommendation summary banner above the grid.
+private struct RecommendationCard: View {
+    let text: String
+    var body: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: "star.circle.fill")
+                .foregroundStyle(.green)
+                .font(.title3)
+            Text(text)
+                .font(.subheadline)
+            Spacer(minLength: 0)
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 12))
+    }
+}
+
+/// A photo tile with keeper/remove state and a quality-badge strip.
+private struct PhotoChoiceCell: View {
+    let asset: PHAsset
+    let isKeeper: Bool
+    let isMarkedForRemoval: Bool
+    let badges: [QualityBadge]
+
+    var body: some View {
+        VStack(spacing: 4) {
+            AssetThumbnailView(asset: asset, targetSize: CGSize(width: 240, height: 240))
+                .aspectRatio(1, contentMode: .fill)
+                .frame(maxWidth: .infinity)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 12).stroke(borderColor, lineWidth: 3)
+                }
+                .overlay(alignment: .topLeading) {
+                    if isKeeper { Badge(text: "Keeper", systemImage: "star.fill", tint: .green) }
+                }
+                .overlay(alignment: .topTrailing) {
+                    Image(systemName: isMarkedForRemoval ? "minus.circle.fill" : "checkmark.circle.fill")
+                        .font(.title3)
+                        .symbolRenderingMode(.palette)
+                        .foregroundStyle(.white, isMarkedForRemoval ? .red : .green)
+                        .padding(6)
+                }
+                .opacity(isMarkedForRemoval ? 0.55 : 1)
+
+            BadgeStrip(badges: badges)
+        }
+    }
+
+    private var borderColor: Color {
+        if isMarkedForRemoval { return .red }
+        if isKeeper { return .green }
+        return .clear
+    }
+}
+
+/// Compact horizontal strip of badge icons under a tile.
+private struct BadgeStrip: View {
+    let badges: [QualityBadge]
+    var body: some View {
+        HStack(spacing: 4) {
+            ForEach(badges, id: \.self) { badge in
+                Image(systemName: badge.systemImage)
+                    .font(.caption2)
+                    .foregroundStyle(badge == .protected ? Color.orange
+                                     : badge.isNegative ? Color.red : Color.secondary)
+                    .accessibilityLabel(badge.rawValue)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(height: 14)
+    }
+}
+
+private struct Badge: View {
+    let text: String
+    let systemImage: String
+    let tint: Color
+    var body: some View {
+        Label(text, systemImage: systemImage)
+            .font(.caption2.bold())
+            .padding(.horizontal, 6)
+            .padding(.vertical, 3)
+            .background(tint, in: Capsule())
+            .foregroundStyle(.white)
+            .padding(6)
+    }
+}

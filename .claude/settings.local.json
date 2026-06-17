@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xcrun simctl *)",
+      "Bash(xcodebuild -scheme \"AI Photo Optimizer\" -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -configuration Debug build)",
+      "Bash(xcodebuild -downloadAllPlatforms)",
+      "Bash(xcodebuild -showsdks)",
+      "Bash(xcodebuild -scheme \"AI Photo Optimizer\" -destination 'id=441D3779-F9ED-4F2B-91F2-C5898D4C7A22' -configuration Debug build)",
+      "Bash(echo \"captured\")",
+      "Bash(xcodebuild test *)",
+      "Bash(echo \"exit: $?\")",
+      "Read(//tmp/**)",
+      "Bash(ls -la \"/Users/veerav/.claude/projects/-Users-veerav-Documents-AI-Photo-Optimizer/\")",
+      "Bash(python3 -)",
+      "Bash(ls -d *.xcodeproj *.xcworkspace)",
+      "Bash(git rev-parse *)",
+      "Bash(ls Intents)",
+      "Bash(ls Ranking)",
+      "Bash(ls ../CleanShotsTests)"
+    ]
+  }
+}
