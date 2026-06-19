@@ -28,7 +28,20 @@ struct PhotoAnalyzer {
             hash: hash,
             featurePrintData: featureData,
             quality: quality,
-            flags: flags
+            flags: flags,
+            metadata: Self.metadata(for: asset)
+        )
+    }
+
+    /// Captures cheap session metadata (time/GPS/burst/aspect) from PhotoKit
+    /// properties — no image data is read here.
+    nonisolated static func metadata(for asset: PHAsset) -> PhotoMetadata {
+        PhotoMetadata(
+            creationDate: asset.creationDate,
+            latitude: asset.location?.coordinate.latitude,
+            longitude: asset.location?.coordinate.longitude,
+            burstIdentifier: asset.burstIdentifier,
+            aspectRatio: asset.pixelHeight > 0 ? Double(asset.pixelWidth) / Double(asset.pixelHeight) : 0
         )
     }
 

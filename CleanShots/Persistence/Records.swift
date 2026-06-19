@@ -51,6 +51,8 @@ final class ImageFeatureRecord {
     /// MVP 2: cached quality metrics + protection flags (Codable value types).
     var quality: QualityScores
     var flags: PhotoFlags
+    /// MVP 5: cached session metadata (time/GPS/burst) for drone/burst clustering.
+    var metadata: PhotoMetadata
     var computedAt: Date
 
     init(
@@ -61,6 +63,7 @@ final class ImageFeatureRecord {
         pixelCount: Int,
         quality: QualityScores = .unknown,
         flags: PhotoFlags = .none,
+        metadata: PhotoMetadata = .unknown,
         computedAt: Date = .now
     ) {
         self.assetLocalIdentifier = assetLocalIdentifier
@@ -70,6 +73,7 @@ final class ImageFeatureRecord {
         self.pixelCount = pixelCount
         self.quality = quality
         self.flags = flags
+        self.metadata = metadata
         self.computedAt = computedAt
     }
 
@@ -81,7 +85,8 @@ final class ImageFeatureRecord {
             blockingKey: cached.blockingKey,
             pixelCount: cached.pixelCount,
             quality: cached.quality,
-            flags: cached.flags
+            flags: cached.flags,
+            metadata: cached.metadata
         )
     }
 
@@ -93,7 +98,8 @@ final class ImageFeatureRecord {
             hash: UInt64(bitPattern: Int64(perceptualHashBits)),
             featurePrintData: featurePrintData,
             quality: quality,
-            flags: flags
+            flags: flags,
+            metadata: metadata
         )
     }
 }
@@ -181,6 +187,63 @@ final class ScanCheckpointRecord {
     }
 }
 
+/// The kind of redundant photo sequence a cluster represents (MVP 5). Heuristic:
+/// we label `droneLike` rather than asserting "drone" unless metadata proves it.
+enum SessionType: String, Sendable, Codable, CaseIterable {
+    case burst
+    case droneLike
+    case photoSession
+    case event
+}
+
+/// A clustered photo session (burst / drone-like / session / event) found in
+/// drone-burst mode. Holds the member assets, the recommended best shots, and the
+/// unique-angle shots protected by scene-diversity scoring (MVP 5).
+@Model
+final class SessionClusterRecord {
+    @Attribute(.unique) var id: UUID
+    var assetIdentifiers: [String]
+    var sessionTypeRaw: String
+    var startDate: Date
+    var endDate: Date
+    /// Coarse location bucket (rounded GPS) when available, else nil.
+    var locationBucket: String?
+    var recommendedBestShotIds: [String]
+    var protectedUniqueShotIds: [String]
+    var createdAt: Date
+
+    init(
+        id: UUID = UUID(),
+        assetIdentifiers: [String],
+        sessionType: SessionType,
+        startDate: Date,
+        endDate: Date,
+        locationBucket: String? = nil,
+        recommendedBestShotIds: [String] = [],
+        protectedUniqueShotIds: [String] = [],
+        createdAt: Date = .now
+    ) {
+        self.id = id
+        self.assetIdentifiers = assetIdentifiers
+        self.sessionTypeRaw = sessionType.rawValue
+        self.startDate = startDate
+        self.endDate = endDate
+        self.locationBucket = locationBucket
+        self.recommendedBestShotIds = recommendedBestShotIds
+        self.protectedUniqueShotIds = protectedUniqueShotIds
+        self.createdAt = createdAt
+    }
+
+    var sessionType: SessionType { SessionType(rawValue: sessionTypeRaw) ?? .photoSession }
+
+    /// Photos suggested for removal: members that are neither a best shot nor a
+    /// protected unique angle.
+    var suggestedRemovalIds: [String] {
+        let kept = Set(recommendedBestShotIds).union(protectedUniqueShotIds)
+        return assetIdentifiers.filter { !kept.contains($0) }
+    }
+}
+
 enum PersistenceSchema {
     static let models: [any PersistentModel.Type] = [
         PhotoAssetRecord.self,
@@ -188,5 +251,6 @@ enum PersistenceSchema {
         DuplicateGroupRecord.self,
         CleanupSessionRecord.self,
         ScanCheckpointRecord.self,
+        SessionClusterRecord.self,
     ]
 }

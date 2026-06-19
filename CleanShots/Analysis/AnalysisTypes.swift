@@ -48,6 +48,8 @@ struct CachedAnalysis: Sendable, Equatable {
     /// MVP 2 quality metrics + protection flags, cached alongside the hash.
     let quality: QualityScores
     let flags: PhotoFlags
+    /// MVP 5 session metadata (time/GPS/burst), cached for drone/burst clustering.
+    let metadata: PhotoMetadata
 
     var hash: UInt64 { UInt64(bitPattern: Int64(hashBits)) }
 
@@ -58,7 +60,8 @@ struct CachedAnalysis: Sendable, Equatable {
         hash: UInt64,
         featurePrintData: Data?,
         quality: QualityScores = .unknown,
-        flags: PhotoFlags = .none
+        flags: PhotoFlags = .none,
+        metadata: PhotoMetadata = .unknown
     ) {
         self.id = id
         self.pixelCount = pixelCount
@@ -67,6 +70,7 @@ struct CachedAnalysis: Sendable, Equatable {
         self.featurePrintData = featurePrintData
         self.quality = quality
         self.flags = flags
+        self.metadata = metadata
     }
 
     /// Reconstructs an `AnalyzedPhoto`, unarchiving the feature print if present.
