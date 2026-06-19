@@ -10,12 +10,14 @@ struct NaturalLanguageScanBar: View {
         HStack(spacing: 8) {
             Image(systemName: "sparkles")
                 .foregroundStyle(.tint)
+                .accessibilityHidden(true)
             TextField("Describe what to scan…", text: $model.query, axis: .vertical)
                 .textInputAutocapitalization(.never)
                 .submitLabel(.search)
                 .onSubmit(submit)
             if model.isParsing {
                 ProgressView()
+                    .accessibilityLabel("Working on it")
             } else {
                 Button(action: submit) {
                     Image(systemName: "arrow.up.circle.fill")
@@ -24,6 +26,7 @@ struct NaturalLanguageScanBar: View {
                 .buttonStyle(.plain)
                 .foregroundStyle(model.canSubmit ? AnyShapeStyle(.tint) : AnyShapeStyle(.quaternary))
                 .disabled(!model.canSubmit)
+                .accessibilityLabel("Scan")
             }
         }
         .sheet(isPresented: presentingConfirmation) {

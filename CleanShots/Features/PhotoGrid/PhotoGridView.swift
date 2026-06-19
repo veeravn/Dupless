@@ -49,5 +49,13 @@ private struct ThumbnailCell: View {
             .task(id: asset.localIdentifier) {
                 image = await load()
             }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(label)
+            .accessibilityAddTraits(.isImage)
+    }
+
+    private var label: String {
+        guard let date = asset.creationDate else { return "Photo" }
+        return "Photo, \(date.formatted(date: .abbreviated, time: .omitted))"
     }
 }
