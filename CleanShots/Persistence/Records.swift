@@ -245,12 +245,7 @@ final class SessionClusterRecord {
 }
 
 enum PersistenceSchema {
-    static let models: [any PersistentModel.Type] = [
-        PhotoAssetRecord.self,
-        ImageFeatureRecord.self,
-        DuplicateGroupRecord.self,
-        CleanupSessionRecord.self,
-        ScanCheckpointRecord.self,
-        SessionClusterRecord.self,
-    ]
+    /// The current model set, sourced from the latest versioned schema so the
+    /// app, tests, and migration plan never drift apart.
+    static var models: [any PersistentModel.Type] { SchemaV1.models }
 }
