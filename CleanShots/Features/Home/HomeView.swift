@@ -1,21 +1,42 @@
 import SwiftData
 import SwiftUI
 
-/// Main landing screen. Surfaces Scan, Review, last-scan status. Navigation is
-/// path-based so App Intents / Siri can drive it via `IntentRouter`.
+/// Main landing screen. On iPhone (compact width) it's a path-based
+/// `NavigationStack`; on iPad (regular width) a `NavigationSplitView` with a
+/// sidebar of actions and a detail pane. Both share the same `path`,
+/// `destination(for:)`, and App-Intent routing, so Siri drives either layout.
 struct HomeView: View {
     @Environment(PhotoAuthorizationManager.self) private var authorization
     @Environment(ScanEngine.self) private var scanEngine
     @Environment(IntentRouter.self) private var router
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.horizontalSizeClass) private var sizeClass
     @Query private var groups: [DuplicateGroupRecord]
     @Query(filter: #Predicate<ScanCheckpointRecord> { !$0.isComplete })
     private var incompleteScans: [ScanCheckpointRecord]
     @AppStorage(ScanEngine.lastScanDateKey) private var lastScanDate: Double = 0
 
     @State private var path: [AppRoute] = []
+    @State private var sidebarSelection: SidebarItem?
 
     var body: some View {
+        Group {
+            if sizeClass == .regular {
+                iPadLayout
+            } else {
+                iPhoneLayout
+            }
+        }
+        .onChange(of: router.route, initial: true) { _, route in
+            guard let route else { return }
+            path = [route]
+            router.route = nil
+        }
+    }
+
+    // MARK: - iPhone (unchanged)
+
+    private var iPhoneLayout: some View {
         NavigationStack(path: $path) {
             List {
                 if authorization.status == .limited {
@@ -58,12 +79,61 @@ struct HomeView: View {
             .navigationTitle("CleanShots")
             .navigationDestination(for: AppRoute.self, destination: destination)
         }
-        .onChange(of: router.route, initial: true) { _, route in
-            guard let route else { return }
-            path = [route]
-            router.route = nil
+    }
+
+    // MARK: - iPad
+
+    private var iPadLayout: some View {
+        NavigationSplitView {
+            List(selection: $sidebarSelection) {
+                if authorization.status == .limited {
+                    Section { LimitedAccessBanner() }
+                }
+
+                Section("Ask CleanShots") {
+                    NaturalLanguageScanBar()
+                }
+
+                if let interrupted = incompleteScans.first, !scanEngine.isScanning {
+                    Section {
+                        Button { path = [.resume] } label: { ResumeScanLabel(checkpoint: interrupted) }
+                            .buttonStyle(.plain)
+                    }
+                }
+
+                Section("Get started") {
+                    Label("Scan Photos", systemImage: "sparkle.magnifyingglass").tag(SidebarItem.scan)
+                    Label("Drone / Burst Mode", systemImage: "airplane").tag(SidebarItem.droneBurst)
+                    Label("Review Duplicates", systemImage: "rectangle.stack.badge.minus")
+                        .tag(SidebarItem.review)
+                        .disabled(groups.isEmpty)
+                    Label("Browse Photos", systemImage: "photo.on.rectangle").tag(SidebarItem.browse)
+                }
+
+                Section("Last scan") {
+                    LabeledContent("Status", value: statusText)
+                    LabeledContent("Estimated duplicates", value: duplicatesText)
+                }
+            }
+            .navigationTitle("CleanShots")
+        } detail: {
+            NavigationStack(path: $path) {
+                WelcomeDetail()
+                    .navigationDestination(for: AppRoute.self, destination: destination)
+            }
+        }
+        .onChange(of: sidebarSelection) { _, item in
+            guard let item else { return }
+            path = [item.route]
+        }
+        .onChange(of: path) { _, newPath in
+            // Returning to the welcome pane clears the highlight so the same item
+            // can be re-selected.
+            if newPath.isEmpty { sidebarSelection = nil }
         }
     }
+
+    // MARK: - Shared
 
     @ViewBuilder
     private func destination(for route: AppRoute) -> some View {
@@ -92,6 +162,33 @@ struct HomeView: View {
         guard !groups.isEmpty else { return "—" }
         let removable = groups.reduce(0) { $0 + $1.estimatedRemovableCount }
         return "\(removable) photos"
+    }
+}
+
+/// Sidebar actions on iPad, each mapping to the route shown in the detail pane.
+enum SidebarItem: Hashable {
+    case scan, droneBurst, review, browse
+
+    var route: AppRoute {
+        switch self {
+        case .scan: return .scanSetup
+        case .droneBurst: return .droneBurstScan(scope: .recent(limit: 300), options: .default)
+        case .review: return .review
+        case .browse: return .browse
+        }
+    }
+}
+
+/// Placeholder shown in the iPad detail pane before an action is chosen.
+private struct WelcomeDetail: View {
+    var body: some View {
+        ContentUnavailableView {
+            Label("CleanShots", systemImage: "sparkles")
+        } description: {
+            Text("Choose Scan, Drone / Burst, or Review to begin. Everything happens on your device.")
+        }
+        .navigationTitle("CleanShots")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 

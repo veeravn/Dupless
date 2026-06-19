@@ -24,6 +24,7 @@ struct PhotoAccessView: View {
                     .multilineTextAlignment(.center)
             }
             .padding(.horizontal)
+            .frame(maxWidth: 540)
 
             Spacer()
 
@@ -42,7 +43,9 @@ struct PhotoAccessView: View {
             }
             .padding(.horizontal)
             .padding(.bottom)
+            .frame(maxWidth: 540)
         }
+        .frame(maxWidth: .infinity)
     }
 
     private var isDenied: Bool {

@@ -56,6 +56,8 @@ struct ScanProgressView: View {
             }
         }
         .padding()
+        .frame(maxWidth: 520)
+        .frame(maxWidth: .infinity)
         .navigationTitle("Scanning")
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(engine.isScanning)
