@@ -20,6 +20,9 @@ final class ScanEngine {
     private(set) var progress: Double = 0
     private(set) var lastError: String?
     private(set) var lastResultCount = 0
+    /// Photos in the scan that couldn't be analyzed (e.g. iCloud-only, not
+    /// downloaded). Surfaced after a scan so skipped photos aren't hidden.
+    private(set) var skippedCount = 0
 
     private let fetcher = PhotoAssetFetcher()
     private let loader = PhotoImageLoader()
@@ -62,6 +65,7 @@ final class ScanEngine {
         isScanning = true
         lastError = nil
         progress = 0
+        skippedCount = 0
         stage = .indexing
 
         let signature = "drone|\(scope.signature)|\(options.signature)"
@@ -79,6 +83,7 @@ final class ScanEngine {
         )
 
         let allCached = await analyzePending(targets: checkpoint.targetIdentifiers, signature: signature, modelContext: modelContext)
+        skippedCount = ScanCoverage.skippedCount(targets: checkpoint.targetIdentifiers, analyzed: allCached)
 
         stage = .finding
         let scanner = DroneBurstScanner(altitudeProvider: PhotoAltitudeService())
@@ -127,29 +132,18 @@ final class ScanEngine {
         isScanning = true
         lastError = nil
         progress = 0
+        skippedCount = 0
         stage = .indexing
 
         let targets = checkpoint.targetIdentifiers
         let allCached = await analyzePending(targets: targets, signature: checkpoint.signature, modelContext: modelContext)
+        skippedCount = ScanCoverage.skippedCount(targets: targets, analyzed: allCached)
 
         // Stage: group from the (now complete) cache, then rank each group to
         // pick the best-shot keeper (MVP 2). Both run off-main.
         stage = .finding
-        let results = await Task.detached(priority: .userInitiated) {
-            let analyzed = allCached.map { $0.toAnalyzedPhoto() }
-            let groups = DuplicateGrouper().group(analyzed, sensitivity: sensitivity)
-            let ranker = BestShotRanker()
-            let byID = Dictionary(uniqueKeysWithValues: allCached.map { ($0.id, $0) })
-            return groups.map { group -> ScanGroupResult in
-                let rankables = group.memberIdentifiers.compactMap { byID[$0]?.rankablePhoto }
-                let ranking = ranker.rank(rankables)
-                return ScanGroupResult(
-                    memberIdentifiers: group.memberIdentifiers,
-                    confidence: group.confidence,
-                    keeperIdentifier: ranking.keeperIdentifier ?? group.keeperIdentifier
-                )
-            }
-        }.value
+        let planner = DuplicateScanPlanner(sensitivity: sensitivity)
+        let results = await Task.detached(priority: .userInitiated) { planner.plan(allCached) }.value
 
         stage = .grouping
         persistGroups(results, in: modelContext)
@@ -264,32 +258,12 @@ final class ScanEngine {
     }
 
     private func persistClusters(_ records: [SessionClusterRecord], in context: ModelContext) {
-        try? context.delete(model: SessionClusterRecord.self)
-        for record in records {
-            context.insert(record)
-        }
-        do {
-            try context.save()
-        } catch {
-            lastError = error.localizedDescription
-        }
+        do { try ScanResultWriter.replaceClusters(records, in: context) }
+        catch { lastError = error.localizedDescription }
     }
 
     private func persistGroups(_ results: [ScanGroupResult], in context: ModelContext) {
-        try? context.delete(model: DuplicateGroupRecord.self)
-        for result in results {
-            context.insert(
-                DuplicateGroupRecord(
-                    memberIdentifiers: result.memberIdentifiers,
-                    confidence: result.confidence,
-                    recommendedKeeperIdentifier: result.keeperIdentifier
-                )
-            )
-        }
-        do {
-            try context.save()
-        } catch {
-            lastError = error.localizedDescription
-        }
+        do { try ScanResultWriter.replaceGroups(results, in: context) }
+        catch { lastError = error.localizedDescription }
     }
 }

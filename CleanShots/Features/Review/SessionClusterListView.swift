@@ -201,6 +201,18 @@ private struct SessionCell: View {
             .overlay { RoundedRectangle(cornerRadius: 10).stroke(borderColor, lineWidth: 3) }
             .overlay(alignment: .topLeading) { badge }
             .opacity(isMarkedForRemoval ? 0.55 : 1)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(accessibilityLabel)
+            .accessibilityAddTraits(role == .redundant ? .isButton : [])
+            .accessibilityAddTraits(isMarkedForRemoval ? [.isSelected] : [])
+    }
+
+    private var accessibilityLabel: String {
+        switch role {
+        case .best: return "Best shot, kept"
+        case .protected: return "Protected unique angle, kept"
+        case .redundant: return "Redundant photo, " + (isMarkedForRemoval ? "selected for removal" : "not selected")
+        }
     }
 
     @ViewBuilder

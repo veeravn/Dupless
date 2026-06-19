@@ -39,6 +39,15 @@ struct ScanProgressView: View {
 
             Spacer()
 
+            if finished, engine.skippedCount > 0 {
+                Label("^[\(engine.skippedCount) photo](inflect: true) couldn't be analyzed — they may be in iCloud and not downloaded.",
+                      systemImage: "icloud.slash")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 40)
+            }
+
             if finished {
                 NavigationLink {
                     if job.isDroneBurst {

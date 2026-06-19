@@ -195,6 +195,18 @@ private struct PhotoChoiceCell: View {
 
             BadgeStrip(badges: badges)
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(accessibilityLabel)
+        .accessibilityAddTraits(.isButton)
+        .accessibilityAddTraits(isMarkedForRemoval ? [.isSelected] : [])
+    }
+
+    private var accessibilityLabel: String {
+        var parts = ["Photo"]
+        if isKeeper { parts.append("recommended keeper") }
+        parts.append(isMarkedForRemoval ? "marked for removal" : "kept")
+        if !badges.isEmpty { parts.append(badges.map(\.rawValue).joined(separator: ", ")) }
+        return parts.joined(separator: ", ")
     }
 
     private var borderColor: Color {
