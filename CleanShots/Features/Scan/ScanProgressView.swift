@@ -4,7 +4,10 @@ import SwiftData
 /// The work a progress screen performs: a fresh scan or a resumed one.
 enum ScanJob {
     case fresh(scope: ScanScope, options: ScanOptions, sensitivity: SimilaritySensitivity)
+    case droneBurst(scope: ScanScope, options: ScanOptions)
     case resume(ScanCheckpointRecord)
+
+    var isDroneBurst: Bool { if case .droneBurst = self { return true }; return false }
 }
 
 /// Runs the scan and shows the five stages from the spec. On completion, offers
@@ -38,9 +41,13 @@ struct ScanProgressView: View {
 
             if finished {
                 NavigationLink {
-                    DuplicateGroupListView()
+                    if job.isDroneBurst {
+                        SessionClusterListView()
+                    } else {
+                        DuplicateGroupListView()
+                    }
                 } label: {
-                    Text(engine.lastResultCount > 0 ? "Review ^[\(engine.lastResultCount) Group](inflect: true)" : "No Duplicates Found")
+                    completionText
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
@@ -58,10 +65,25 @@ struct ScanProgressView: View {
             switch job {
             case let .fresh(scope, options, sensitivity):
                 await engine.scan(scope: scope, options: options, sensitivity: sensitivity, modelContext: modelContext)
+            case let .droneBurst(scope, options):
+                await engine.scanDroneBurst(scope: scope, options: options, modelContext: modelContext)
             case let .resume(checkpoint):
                 await engine.resume(checkpoint: checkpoint, modelContext: modelContext)
             }
             finished = true
+        }
+    }
+
+    // Inflection markup only works when a string *literal* is passed to Text, so
+    // these are built inline rather than via a computed String.
+    @ViewBuilder
+    private var completionText: some View {
+        if engine.lastResultCount == 0 {
+            Text(job.isDroneBurst ? "No Sessions Found" : "No Duplicates Found")
+        } else if job.isDroneBurst {
+            Text("Review ^[\(engine.lastResultCount) Session](inflect: true)")
+        } else {
+            Text("Review ^[\(engine.lastResultCount) Group](inflect: true)")
         }
     }
 }

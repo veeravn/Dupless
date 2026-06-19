@@ -12,6 +12,7 @@ struct ScanRequest: Hashable, Sendable {
 enum AppRoute: Hashable {
     case scanSetup
     case scan(ScanRequest)
+    case droneBurstScan(scope: ScanScope, options: ScanOptions)
     case review
     case resume
     case browse

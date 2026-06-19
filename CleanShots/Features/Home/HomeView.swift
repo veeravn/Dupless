@@ -38,6 +38,9 @@ struct HomeView: View {
                     NavigationLink(value: AppRoute.scanSetup) {
                         Label("Scan Photos", systemImage: "sparkle.magnifyingglass")
                     }
+                    NavigationLink(value: AppRoute.droneBurstScan(scope: .recent(limit: 300), options: .default)) {
+                        Label("Drone / Burst Mode", systemImage: "airplane")
+                    }
                     NavigationLink(value: AppRoute.review) {
                         Label("Review Duplicates", systemImage: "rectangle.stack.badge.minus")
                     }
@@ -69,6 +72,8 @@ struct HomeView: View {
             ScanSetupView()
         case .scan(let request):
             ScanProgressView(job: .fresh(scope: request.scope, options: request.options, sensitivity: request.sensitivity))
+        case let .droneBurstScan(scope, options):
+            ScanProgressView(job: .droneBurst(scope: scope, options: options))
         case .review:
             DuplicateGroupListView()
         case .resume:

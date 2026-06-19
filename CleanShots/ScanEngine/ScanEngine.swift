@@ -54,6 +54,52 @@ final class ScanEngine {
         await run(checkpoint: checkpoint, sensitivity: sensitivity, modelContext: modelContext)
     }
 
+    /// Runs a drone/burst scan: index + analyze (shared with the normal path),
+    /// then cluster into sessions and pick best shots while protecting unique
+    /// angles. Persists `SessionClusterRecord`s instead of duplicate groups.
+    func scanDroneBurst(scope: ScanScope, options: ScanOptions, modelContext: ModelContext) async {
+        guard !isScanning else { return }
+        isScanning = true
+        lastError = nil
+        progress = 0
+        stage = .indexing
+
+        let signature = "drone|\(scope.signature)|\(options.signature)"
+        let fetchResult = fetcher.fetchAssets(scope: scope, options: options)
+        var targets: [String] = []
+        targets.reserveCapacity(fetchResult.count)
+        fetchResult.enumerateObjects { asset, _, _ in targets.append(asset.localIdentifier) }
+
+        let checkpoint = upsertCheckpoint(
+            signature: signature,
+            scopeDescription: scope.displayName,
+            sensitivity: .balanced,
+            targets: targets,
+            in: modelContext
+        )
+
+        let allCached = await analyzePending(targets: checkpoint.targetIdentifiers, signature: signature, modelContext: modelContext)
+
+        stage = .finding
+        let scanner = DroneBurstScanner(altitudeProvider: PhotoAltitudeService())
+        let outcomes = await Task.detached(priority: .userInitiated) { await scanner.scan(allCached) }.value
+
+        stage = .grouping
+        persistClusters(outcomes.map(scanner.record), in: modelContext)
+
+        stage = .preparing
+        checkpoint.isComplete = true
+        checkpoint.updatedAt = .now
+        lastResultCount = outcomes.count
+        try? modelContext.save()
+        UserDefaults.standard.set(Date.now.timeIntervalSince1970, forKey: Self.lastScanDateKey)
+        scanLog.log("drone/burst scan complete: \(outcomes.count) sessions")
+
+        isScanning = false
+        stage = nil
+        progress = 1
+    }
+
     /// Resumes a previously interrupted scan from its checkpoint.
     func resume(checkpoint: ScanCheckpointRecord, modelContext: ModelContext) async {
         guard !isScanning else { return }
@@ -84,40 +130,11 @@ final class ScanEngine {
         stage = .indexing
 
         let targets = checkpoint.targetIdentifiers
-        let cachedIDs = Set(cachedAnalyses(for: targets, in: modelContext).map(\.id))
-        let pending = ResumePlanner.pendingIdentifiers(targets: targets, cached: cachedIDs)
-        scanLog.log("scan signature=\(checkpoint.signature) targets=\(targets.count) cached=\(cachedIDs.count) pending=\(pending.count)")
-
-        // Stage: analyze only what isn't cached yet, persisting each result.
-        if !pending.isEmpty {
-            stage = .analyzing
-            let analyzer = PhotoAnalyzer()
-            let loaderRef = loader
-            let total = pending.count
-            let stream = AsyncStream<CachedAnalysis> { continuation in
-                let task = Task.detached(priority: .userInitiated) {
-                    for id in pending {
-                        if let result = await analyzer.analyze(identifier: id, loader: loaderRef) {
-                            continuation.yield(result)
-                        }
-                    }
-                    continuation.finish()
-                }
-                continuation.onTermination = { _ in task.cancel() }
-            }
-
-            var done = 0
-            for await analysis in stream {
-                persistFeature(analysis, in: modelContext)
-                done += 1
-                progress = Double(done) / Double(total)
-            }
-        }
+        let allCached = await analyzePending(targets: targets, signature: checkpoint.signature, modelContext: modelContext)
 
         // Stage: group from the (now complete) cache, then rank each group to
         // pick the best-shot keeper (MVP 2). Both run off-main.
         stage = .finding
-        let allCached = cachedAnalyses(for: targets, in: modelContext)
         let results = await Task.detached(priority: .userInitiated) {
             let analyzed = allCached.map { $0.toAnalyzedPhoto() }
             let groups = DuplicateGrouper().group(analyzed, sensitivity: sensitivity)
@@ -148,6 +165,40 @@ final class ScanEngine {
         isScanning = false
         stage = nil
         progress = 1
+    }
+
+    /// Shared index→analyze stage: analyzes whatever isn't cached yet (persisting
+    /// each result for resume) and returns the complete cached set for `targets`.
+    private func analyzePending(targets: [String], signature: String, modelContext: ModelContext) async -> [CachedAnalysis] {
+        let cachedIDs = Set(cachedAnalyses(for: targets, in: modelContext).map(\.id))
+        let pending = ResumePlanner.pendingIdentifiers(targets: targets, cached: cachedIDs)
+        scanLog.log("scan signature=\(signature) targets=\(targets.count) cached=\(cachedIDs.count) pending=\(pending.count)")
+
+        if !pending.isEmpty {
+            stage = .analyzing
+            let analyzer = PhotoAnalyzer()
+            let loaderRef = loader
+            let total = pending.count
+            let stream = AsyncStream<CachedAnalysis> { continuation in
+                let task = Task.detached(priority: .userInitiated) {
+                    for id in pending {
+                        if let result = await analyzer.analyze(identifier: id, loader: loaderRef) {
+                            continuation.yield(result)
+                        }
+                    }
+                    continuation.finish()
+                }
+                continuation.onTermination = { _ in task.cancel() }
+            }
+
+            var done = 0
+            for await analysis in stream {
+                persistFeature(analysis, in: modelContext)
+                done += 1
+                progress = Double(done) / Double(total)
+            }
+        }
+        return cachedAnalyses(for: targets, in: modelContext)
     }
 
     // MARK: - Persistence helpers
@@ -210,6 +261,18 @@ final class ScanEngine {
         context.insert(checkpoint)
         try? context.save()
         return checkpoint
+    }
+
+    private func persistClusters(_ records: [SessionClusterRecord], in context: ModelContext) {
+        try? context.delete(model: SessionClusterRecord.self)
+        for record in records {
+            context.insert(record)
+        }
+        do {
+            try context.save()
+        } catch {
+            lastError = error.localizedDescription
+        }
     }
 
     private func persistGroups(_ results: [ScanGroupResult], in context: ModelContext) {
