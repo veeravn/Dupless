@@ -135,21 +135,8 @@ final class ScanEngine {
         // Stage: group from the (now complete) cache, then rank each group to
         // pick the best-shot keeper (MVP 2). Both run off-main.
         stage = .finding
-        let results = await Task.detached(priority: .userInitiated) {
-            let analyzed = allCached.map { $0.toAnalyzedPhoto() }
-            let groups = DuplicateGrouper().group(analyzed, sensitivity: sensitivity)
-            let ranker = BestShotRanker()
-            let byID = Dictionary(uniqueKeysWithValues: allCached.map { ($0.id, $0) })
-            return groups.map { group -> ScanGroupResult in
-                let rankables = group.memberIdentifiers.compactMap { byID[$0]?.rankablePhoto }
-                let ranking = ranker.rank(rankables)
-                return ScanGroupResult(
-                    memberIdentifiers: group.memberIdentifiers,
-                    confidence: group.confidence,
-                    keeperIdentifier: ranking.keeperIdentifier ?? group.keeperIdentifier
-                )
-            }
-        }.value
+        let planner = DuplicateScanPlanner(sensitivity: sensitivity)
+        let results = await Task.detached(priority: .userInitiated) { planner.plan(allCached) }.value
 
         stage = .grouping
         persistGroups(results, in: modelContext)
@@ -264,32 +251,12 @@ final class ScanEngine {
     }
 
     private func persistClusters(_ records: [SessionClusterRecord], in context: ModelContext) {
-        try? context.delete(model: SessionClusterRecord.self)
-        for record in records {
-            context.insert(record)
-        }
-        do {
-            try context.save()
-        } catch {
-            lastError = error.localizedDescription
-        }
+        do { try ScanResultWriter.replaceClusters(records, in: context) }
+        catch { lastError = error.localizedDescription }
     }
 
     private func persistGroups(_ results: [ScanGroupResult], in context: ModelContext) {
-        try? context.delete(model: DuplicateGroupRecord.self)
-        for result in results {
-            context.insert(
-                DuplicateGroupRecord(
-                    memberIdentifiers: result.memberIdentifiers,
-                    confidence: result.confidence,
-                    recommendedKeeperIdentifier: result.keeperIdentifier
-                )
-            )
-        }
-        do {
-            try context.save()
-        } catch {
-            lastError = error.localizedDescription
-        }
+        do { try ScanResultWriter.replaceGroups(results, in: context) }
+        catch { lastError = error.localizedDescription }
     }
 }
