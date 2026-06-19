@@ -30,6 +30,10 @@ struct HomeView: View {
                     }
                 }
 
+                Section("Ask CleanShots") {
+                    NaturalLanguageScanBar()
+                }
+
                 Section("Get started") {
                     NavigationLink(value: AppRoute.scanSetup) {
                         Label("Scan Photos", systemImage: "sparkle.magnifyingglass")

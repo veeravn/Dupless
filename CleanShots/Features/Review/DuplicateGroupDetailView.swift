@@ -22,7 +22,7 @@ struct DuplicateGroupDetailView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 if let keeperID = ranking?.keeperIdentifier, let badges = ranking?.badges[keeperID] {
-                    RecommendationCard(text: RecommendationText.keeperSummary(badges: badges))
+                    KeeperExplanationPanel(group: group, templateText: RecommendationText.keeperSummary(badges: badges))
                 }
 
                 LazyVGrid(columns: columns, spacing: 8) {
@@ -110,6 +110,40 @@ struct DuplicateGroupDetailView: View {
             dismiss()
         }
         return result
+    }
+}
+
+/// The keeper recommendation, with a "Why this one?" action that loads a richer,
+/// model-generated explanation when Apple Intelligence is available. Falls back
+/// to the same template wording otherwise, so the panel always works.
+private struct KeeperExplanationPanel: View {
+    let group: DuplicateGroupRecord
+    let templateText: String
+
+    @Environment(\.modelContext) private var modelContext
+    @State private var aiText: String?
+    @State private var loading = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            RecommendationCard(text: aiText ?? templateText)
+            if aiText == nil {
+                Button(action: load) {
+                    Label(loading ? "Thinking…" : "Why this one?", systemImage: "sparkles")
+                        .font(.caption)
+                }
+                .buttonStyle(.borderless)
+                .disabled(loading)
+            }
+        }
+    }
+
+    private func load() {
+        loading = true
+        Task {
+            aiText = await AIExplanationService().explain(group, in: modelContext)
+            loading = false
+        }
     }
 }
 
