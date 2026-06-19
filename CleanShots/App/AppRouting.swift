@@ -7,12 +7,22 @@ struct ScanRequest: Hashable, Sendable {
     var sensitivity: SimilaritySensitivity
 }
 
+/// User choices for a drone/burst scan, set on the setup screen.
+struct DroneBurstOptions: Hashable, Sendable {
+    /// When on, meaningfully different angles (altitude, vantage, framing) are
+    /// protected from cleanup. Off treats a session as pure duplicates.
+    var preserveUniqueAngles: Bool = true
+
+    static let `default` = DroneBurstOptions()
+}
+
 /// Navigation destinations the app can be driven to — by the user or by an
 /// App Intent / Siri.
 enum AppRoute: Hashable {
     case scanSetup
     case scan(ScanRequest)
-    case droneBurstScan(scope: ScanScope, options: ScanOptions)
+    case droneBurstSetup
+    case droneBurstScan(scope: ScanScope, options: ScanOptions, droneOptions: DroneBurstOptions)
     case review
     case resume
     case browse

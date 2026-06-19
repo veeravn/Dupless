@@ -4,7 +4,7 @@ import SwiftData
 /// The work a progress screen performs: a fresh scan or a resumed one.
 enum ScanJob {
     case fresh(scope: ScanScope, options: ScanOptions, sensitivity: SimilaritySensitivity)
-    case droneBurst(scope: ScanScope, options: ScanOptions)
+    case droneBurst(scope: ScanScope, options: ScanOptions, droneOptions: DroneBurstOptions)
     case resume(ScanCheckpointRecord)
 
     var isDroneBurst: Bool { if case .droneBurst = self { return true }; return false }
@@ -85,8 +85,8 @@ struct ScanProgressView: View {
             switch job {
             case let .fresh(scope, options, sensitivity):
                 await engine.scan(scope: scope, options: options, sensitivity: sensitivity, modelContext: modelContext)
-            case let .droneBurst(scope, options):
-                await engine.scanDroneBurst(scope: scope, options: options, modelContext: modelContext)
+            case let .droneBurst(scope, options, droneOptions):
+                await engine.scanDroneBurst(scope: scope, options: options, droneOptions: droneOptions, modelContext: modelContext)
             case let .resume(checkpoint):
                 await engine.resume(checkpoint: checkpoint, modelContext: modelContext)
             }

@@ -59,7 +59,7 @@ struct HomeView: View {
                     NavigationLink(value: AppRoute.scanSetup) {
                         Label("Scan Photos", systemImage: "sparkle.magnifyingglass")
                     }
-                    NavigationLink(value: AppRoute.droneBurstScan(scope: .recent(limit: 300), options: .default)) {
+                    NavigationLink(value: AppRoute.droneBurstSetup) {
                         Label("Drone / Burst Mode", systemImage: "airplane")
                     }
                     NavigationLink(value: AppRoute.review) {
@@ -142,8 +142,10 @@ struct HomeView: View {
             ScanSetupView()
         case .scan(let request):
             ScanProgressView(job: .fresh(scope: request.scope, options: request.options, sensitivity: request.sensitivity))
-        case let .droneBurstScan(scope, options):
-            ScanProgressView(job: .droneBurst(scope: scope, options: options))
+        case .droneBurstSetup:
+            DroneBurstSetupView()
+        case let .droneBurstScan(scope, options, droneOptions):
+            ScanProgressView(job: .droneBurst(scope: scope, options: options, droneOptions: droneOptions))
         case .review:
             DuplicateGroupListView()
         case .resume:
@@ -172,7 +174,7 @@ enum SidebarItem: Hashable {
     var route: AppRoute {
         switch self {
         case .scan: return .scanSetup
-        case .droneBurst: return .droneBurstScan(scope: .recent(limit: 300), options: .default)
+        case .droneBurst: return .droneBurstSetup
         case .review: return .review
         case .browse: return .browse
         }
