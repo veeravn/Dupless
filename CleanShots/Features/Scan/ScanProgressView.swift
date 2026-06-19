@@ -39,6 +39,15 @@ struct ScanProgressView: View {
 
             Spacer()
 
+            if engine.isThrottling {
+                Label("Slowing down to protect your device's temperature and battery.",
+                      systemImage: "thermometer.medium")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 40)
+            }
+
             if finished, engine.skippedCount > 0 {
                 Label("^[\(engine.skippedCount) photo](inflect: true) couldn't be analyzed — they may be in iCloud and not downloaded.",
                       systemImage: "icloud.slash")

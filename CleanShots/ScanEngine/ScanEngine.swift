@@ -23,6 +23,8 @@ final class ScanEngine {
     /// Photos in the scan that couldn't be analyzed (e.g. iCloud-only, not
     /// downloaded). Surfaced after a scan so skipped photos aren't hidden.
     private(set) var skippedCount = 0
+    /// True while analysis is being slowed to protect device temperature/battery.
+    private(set) var isThrottling = false
 
     private let fetcher = PhotoAssetFetcher()
     private let loader = PhotoImageLoader()
@@ -66,6 +68,7 @@ final class ScanEngine {
         lastError = nil
         progress = 0
         skippedCount = 0
+        isThrottling = false
         stage = .indexing
 
         let signature = "drone|\(scope.signature)|\(options.signature)"
@@ -133,6 +136,7 @@ final class ScanEngine {
         lastError = nil
         progress = 0
         skippedCount = 0
+        isThrottling = false
         stage = .indexing
 
         let targets = checkpoint.targetIdentifiers
@@ -190,9 +194,20 @@ final class ScanEngine {
                 persistFeature(analysis, in: modelContext)
                 done += 1
                 progress = Double(done) / Double(total)
+                await throttleIfNeeded()
             }
+            isThrottling = false
         }
         return cachedAnalyses(for: targets, in: modelContext)
+    }
+
+    /// Slows analysis between photos when the device is hot or in Low Power Mode,
+    /// per `ThermalPolicy`. A no-op under normal conditions.
+    private func throttleIfNeeded() async {
+        let info = ProcessInfo.processInfo
+        let delay = ThermalPolicy.throttleDelay(thermalState: info.thermalState, lowPowerMode: info.isLowPowerModeEnabled)
+        isThrottling = delay > .zero
+        if delay > .zero { try? await Task.sleep(for: delay) }
     }
 
     // MARK: - Persistence helpers
