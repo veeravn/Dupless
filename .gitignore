@@ -1,3 +1,7 @@
+# Claude Code — personal/local settings (keep shared .claude/settings.json trackable)
+.claude/settings.local.json
+.claude/*.local.json
+
 # macOS
 .DS_Store
 .AppleDouble
