@@ -62,7 +62,7 @@ final class ScanEngine {
     /// Runs a drone/burst scan: index + analyze (shared with the normal path),
     /// then cluster into sessions and pick best shots while protecting unique
     /// angles. Persists `SessionClusterRecord`s instead of duplicate groups.
-    func scanDroneBurst(scope: ScanScope, options: ScanOptions, modelContext: ModelContext) async {
+    func scanDroneBurst(scope: ScanScope, options: ScanOptions, droneOptions: DroneBurstOptions = .default, modelContext: ModelContext) async {
         guard !isScanning else { return }
         isScanning = true
         lastError = nil
@@ -89,7 +89,12 @@ final class ScanEngine {
         skippedCount = ScanCoverage.skippedCount(targets: checkpoint.targetIdentifiers, analyzed: allCached)
 
         stage = .finding
-        let scanner = DroneBurstScanner(altitudeProvider: PhotoAltitudeService())
+        // Honor the user's "protect unique angles" choice from setup.
+        let diversity = SceneDiversityScorer(config: .init(enabled: droneOptions.preserveUniqueAngles))
+        let scanner = DroneBurstScanner(
+            analyzer: DroneBurstAnalyzer(diversity: diversity),
+            altitudeProvider: PhotoAltitudeService()
+        )
         let outcomes = await Task.detached(priority: .userInitiated) { await scanner.scan(allCached) }.value
 
         stage = .grouping

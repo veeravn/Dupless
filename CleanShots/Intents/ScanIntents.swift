@@ -108,7 +108,7 @@ struct FindBestDroneShotsIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult {
-        IntentRouter.shared.request(.droneBurstScan(scope: .recent(limit: 500), options: .default))
+        IntentRouter.shared.request(.droneBurstScan(scope: .recent(limit: 500), options: .default, droneOptions: .default))
         return .result()
     }
 }
