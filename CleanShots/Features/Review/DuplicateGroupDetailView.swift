@@ -14,6 +14,9 @@ struct DuplicateGroupDetailView: View {
     @State private var assets: [PHAsset] = []
     @State private var ranking: GroupRanking?
     @State private var removalSelection: Set<String> = []
+    /// Distinct variations (same scene, different pose/composition) kept out of
+    /// the default removal selection so the user reviews them.
+    @State private var keptVariations: Set<String> = []
     @State private var showConfirmation = false
 
     private let columns = [GridItem(.adaptive(minimum: 110), spacing: 8)]
@@ -60,6 +63,12 @@ struct DuplicateGroupDetailView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
+            if !keptVariations.isEmpty {
+                Label("\(keptVariations.count) kept as different shots — tap to remove",
+                      systemImage: "person.crop.rectangle.stack")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
             Button(role: .destructive) {
                 showConfirmation = true
             } label: {
@@ -89,8 +98,16 @@ struct DuplicateGroupDetailView: View {
         let rankables = group.memberIdentifiers.compactMap { cached[$0]?.rankablePhoto }
         let result = BestShotRanker().rank(rankables)
         ranking = result
-        // Protection-aware default: pre-select only the suggested (non-protected) removals.
-        removalSelection = Set(result.suggestedRemovalIdentifiers)
+        // Protection-aware default: of the suggested (non-protected) removals,
+        // pre-select only near-identical frames. Distinct variations — same
+        // background, different pose/composition — stay unselected so the user
+        // reviews them instead of having them pre-marked for deletion.
+        let analyzed = group.memberIdentifiers.compactMap { cached[$0]?.toAnalyzedPhoto() }
+        let redundant = RedundancyClassifier().redundantIdentifiers(
+            members: analyzed, keeperID: result.keeperIdentifier)
+        let suggested = Set(result.suggestedRemovalIdentifiers)
+        removalSelection = suggested.intersection(redundant)
+        keptVariations = suggested.subtracting(redundant)
     }
 
     private func cachedAnalyses(for ids: [String]) -> [String: CachedAnalysis] {
