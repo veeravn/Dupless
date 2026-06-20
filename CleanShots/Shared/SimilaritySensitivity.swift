@@ -49,7 +49,11 @@ enum SimilaritySensitivity: String, CaseIterable, Identifiable, Sendable {
     var sessionRelaxedThreshold: Float {
         switch self {
         case .conservative: return 0.50
-        case .balanced: return 0.75
+        // Real-device tuning: a same-backdrop portrait/event series tops out
+        // around feat 0.91, while cross-event look-alikes sit at 0.99+, so 0.88
+        // captures the full series at the default sensitivity without bleeding
+        // across events (the session gate already constrains it).
+        case .balanced: return 0.88
         case .aggressive: return 0.92
         }
     }
