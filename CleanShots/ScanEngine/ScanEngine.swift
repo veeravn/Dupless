@@ -31,6 +31,10 @@ final class ScanEngine {
 
     static let lastScanDateKey = "lastScanDate"
 
+    /// Persist analyzed features in batches of this many, rather than per photo,
+    /// to keep large scans from thrashing the SQLite write-ahead log.
+    private static let saveBatchSize = 100
+
     // MARK: - Entry points
 
     /// Starts (or transparently resumes) a scan for a scope.
@@ -205,8 +209,13 @@ final class ScanEngine {
                 persistFeature(analysis, in: modelContext)
                 done += 1
                 progress = Double(done) / Double(total)
+                // Batch saves: one write per ~100 photos instead of per photo,
+                // so a large scan doesn't thrash the SQLite WAL. A crash re-does
+                // at most one batch on resume.
+                if done % Self.saveBatchSize == 0 { try? modelContext.save() }
                 await throttleIfNeeded()
             }
+            try? modelContext.save() // flush the final partial batch
             isThrottling = false
         }
         return cachedAnalyses(for: targets, in: modelContext)
@@ -272,7 +281,8 @@ final class ScanEngine {
         } else {
             context.insert(ImageFeatureRecord(cached: analysis))
         }
-        try? context.save()
+        // Saving is batched by the caller (see analyzePending) to avoid a
+        // per-photo write on large scans.
     }
 
     private func upsertCheckpoint(
