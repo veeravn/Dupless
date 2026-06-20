@@ -58,12 +58,16 @@ struct ScanSetupView: View {
             }
 
             Section {
+                // Label hidden: the section header already says "Similarity".
+                // An inline picker otherwise renders its label as a leading,
+                // non-selectable row above the choices.
                 Picker("Similarity", selection: $sensitivity) {
                     ForEach(SimilaritySensitivity.allCases) { level in
                         Text(level.title).tag(level)
                     }
                 }
                 .pickerStyle(.inline)
+                .labelsHidden()
             } header: {
                 Text("Similarity")
             } footer: {
