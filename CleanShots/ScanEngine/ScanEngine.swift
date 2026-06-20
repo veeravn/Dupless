@@ -49,6 +49,12 @@ final class ScanEngine {
         targets.reserveCapacity(fetchResult.count)
         fetchResult.enumerateObjects { asset, _, _ in targets.append(asset.localIdentifier) }
 
+        // Content-aware scoping: when the request named a subject, keep only the
+        // photos whose on-device classification matches before anything is cached.
+        if let query = options.contentQuery, !query.isEmpty {
+            targets = await contentFiltered(targets, query: query)
+        }
+
         let checkpoint = upsertCheckpoint(
             signature: signature,
             scopeDescription: scope.displayName,
@@ -204,6 +210,28 @@ final class ScanEngine {
             isThrottling = false
         }
         return cachedAnalyses(for: targets, in: modelContext)
+    }
+
+    /// Narrows targets to photos whose on-device content classification matches
+    /// `query` (e.g. "birthday"). Runs off-main; loads each thumbnail once.
+    /// Resolving the asset inside the detached task keeps non-Sendable `PHAsset`
+    /// off the actor boundary.
+    private func contentFiltered(_ ids: [String], query: String) async -> [String] {
+        let loaderRef = loader
+        let classifier = PhotoContentClassifier()
+        return await Task.detached(priority: .userInitiated) {
+            var kept: [String] = []
+            for id in ids {
+                let fetch = PHAsset.fetchAssets(withLocalIdentifiers: [id], options: nil)
+                guard let asset = fetch.firstObject,
+                      let image = await loaderRef.thumbnail(for: asset)
+                else { continue }
+                if classifier.matches(query: query, labels: classifier.labels(for: image)) {
+                    kept.append(id)
+                }
+            }
+            return kept
+        }.value
     }
 
     /// Slows analysis between photos when the device is hot or in Low Power Mode,

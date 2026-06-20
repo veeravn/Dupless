@@ -47,11 +47,19 @@ struct FoundationModelScanParser: ScanRequestParsing {
             target = .recent(limit: 300)
         }
 
-        let command = AIScanCommand(target: target, mode: mode, includeScreenshots: draft.includeScreenshots)
+        // "none"/blank means scan the whole scope; otherwise narrow by subject.
+        let trimmed = draft.contentQuery.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let contentQuery = (trimmed.isEmpty || trimmed == "none") ? nil : trimmed
+
+        let command = AIScanCommand(
+            target: target, mode: mode,
+            includeScreenshots: draft.includeScreenshots, contentQuery: contentQuery
+        )
         return ParsedScan(
             command: command,
             summary: ParsedScan.summary(for: command, datePhrase: phrase),
-            understood: true
+            understood: true,
+            source: .appleIntelligence
         )
     }
 
@@ -75,4 +83,7 @@ struct ScanRequestDraft {
 
     @Guide(description: "Whether screenshots should be included in the scan.")
     var includeScreenshots: Bool
+
+    @Guide(description: "A single subject or theme to narrow the scan to, like 'birthday', 'beach', 'dog', or 'food'. Use 'none' when the request names no specific subject.")
+    var contentQuery: String
 }

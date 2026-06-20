@@ -30,10 +30,14 @@ enum ScanScope: Equatable, Hashable {
 struct ScanOptions: Equatable, Hashable {
     var includeScreenshots: Bool = true
     var excludeFavorites: Bool = true
+    /// Optional subject/theme to narrow the scan to (e.g. "birthday"), applied by
+    /// on-device content classification after the scope is fetched. Nil scans the
+    /// whole scope. PhotoKit can't filter by content, so this is a post-fetch pass.
+    var contentQuery: String?
 
     static let `default` = ScanOptions()
 
-    var signature: String { "scr:\(includeScreenshots)|fav:\(excludeFavorites)" }
+    var signature: String { "scr:\(includeScreenshots)|fav:\(excludeFavorites)|q:\(contentQuery ?? "")" }
 }
 
 /// Fetches `PHAsset`s for a given scope. Pure PhotoKit; no image data loaded here.
