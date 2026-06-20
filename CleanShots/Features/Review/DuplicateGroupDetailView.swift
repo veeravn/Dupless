@@ -15,6 +15,7 @@ struct DuplicateGroupDetailView: View {
     @State private var ranking: GroupRanking?
     @State private var removalSelection: Set<String> = []
     @State private var showConfirmation = false
+    @State private var inspecting: InspectorTarget?
 
     private let columns = [GridItem(.adaptive(minimum: 110), spacing: 8)]
 
@@ -32,9 +33,10 @@ struct DuplicateGroupDetailView: View {
                             asset: asset,
                             isKeeper: id == ranking?.keeperIdentifier,
                             isMarkedForRemoval: removalSelection.contains(id),
-                            badges: ranking?.badges[id] ?? []
+                            badges: ranking?.badges[id] ?? [],
+                            onToggle: { toggle(id) },
+                            onInspect: { inspecting = InspectorTarget(startID: id) }
                         )
-                        .onTapGesture { toggle(id) }
                     }
                 }
             }
@@ -48,6 +50,14 @@ struct DuplicateGroupDetailView: View {
                 await performCleanup()
             }
             .presentationDetents([.medium])
+        }
+        .fullScreenCover(item: $inspecting) { target in
+            PhotoInspectorView(
+                identifiers: assets.map(\.localIdentifier),
+                keeperID: ranking?.keeperIdentifier,
+                removalSelection: $removalSelection,
+                startID: target.startID
+            )
         }
         .task { await loadRanking() }
     }
@@ -171,34 +181,57 @@ private struct PhotoChoiceCell: View {
     let isKeeper: Bool
     let isMarkedForRemoval: Bool
     let badges: [QualityBadge]
+    let onToggle: () -> Void
+    let onInspect: () -> Void
 
     var body: some View {
         VStack(spacing: 4) {
-            AssetThumbnailView(asset: asset, targetSize: CGSize(width: 240, height: 240))
-                .aspectRatio(1, contentMode: .fill)
-                .frame(maxWidth: .infinity)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 12).stroke(borderColor, lineWidth: 3)
+            // Two sibling buttons: tapping the tile toggles keep/remove (as
+            // before), while the corner magnifier opens the full-screen
+            // inspector. Siblings (not nested) keep their hit areas distinct.
+            ZStack(alignment: .bottomTrailing) {
+                Button(action: onToggle) { thumbnail }
+                    .buttonStyle(.plain)
+
+                Button(action: onInspect) {
+                    Image(systemName: "arrow.up.left.and.arrow.down.right")
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(.white)
+                        .padding(7)
+                        .background(.black.opacity(0.45), in: Circle())
                 }
-                .overlay(alignment: .topLeading) {
-                    if isKeeper { Badge(text: "Keeper", systemImage: "star.fill", tint: .green) }
-                }
-                .overlay(alignment: .topTrailing) {
-                    Image(systemName: isMarkedForRemoval ? "minus.circle.fill" : "checkmark.circle.fill")
-                        .font(.title3)
-                        .symbolRenderingMode(.palette)
-                        .foregroundStyle(.white, isMarkedForRemoval ? .red : .green)
-                        .padding(6)
-                }
-                .opacity(isMarkedForRemoval ? 0.55 : 1)
+                .buttonStyle(.plain)
+                .padding(6)
+                .accessibilityLabel("View larger")
+            }
 
             BadgeStrip(badges: badges)
         }
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(accessibilityLabel)
-        .accessibilityAddTraits(.isButton)
-        .accessibilityAddTraits(isMarkedForRemoval ? [.isSelected] : [])
+    }
+
+    private var thumbnail: some View {
+        AssetThumbnailView(asset: asset, targetSize: CGSize(width: 240, height: 240))
+            .aspectRatio(1, contentMode: .fill)
+            .frame(maxWidth: .infinity)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .overlay {
+                RoundedRectangle(cornerRadius: 12).stroke(borderColor, lineWidth: 3)
+            }
+            .overlay(alignment: .topLeading) {
+                if isKeeper { Badge(text: "Keeper", systemImage: "star.fill", tint: .green) }
+            }
+            .overlay(alignment: .topTrailing) {
+                Image(systemName: isMarkedForRemoval ? "minus.circle.fill" : "checkmark.circle.fill")
+                    .font(.title3)
+                    .symbolRenderingMode(.palette)
+                    .foregroundStyle(.white, isMarkedForRemoval ? .red : .green)
+                    .padding(6)
+            }
+            .opacity(isMarkedForRemoval ? 0.55 : 1)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(accessibilityLabel)
+            .accessibilityAddTraits(.isButton)
+            .accessibilityAddTraits(isMarkedForRemoval ? [.isSelected] : [])
     }
 
     private var accessibilityLabel: String {
