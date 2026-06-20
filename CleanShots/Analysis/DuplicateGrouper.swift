@@ -22,7 +22,13 @@ struct DuplicateGrouper {
                     let b = analyzed[indices[j]]
                     guard PerceptualHashService.hammingDistance(a.hash, b.hash) <= sensitivity.hammingPrefilter
                     else { continue }
-                    if distance(a, b) <= sensitivity.featureDistanceThreshold {
+                    let d = distance(a, b)
+                    if d <= sensitivity.featureDistanceThreshold {
+                        unionFind.union(indices[i], indices[j])
+                    } else if d <= sensitivity.sessionRelaxedThreshold, sameSession(a, b) {
+                        // Same shooting session: a pose change against the same
+                        // backdrop still groups, so the series collapses to one
+                        // keeper instead of staying ungrouped.
                         unionFind.union(indices[i], indices[j])
                     }
                 }
@@ -50,6 +56,24 @@ struct DuplicateGrouper {
             )
         }
         return results.sorted { $0.confidence > $1.confidence }
+    }
+
+    /// Whether two photos belong to the same short shooting session — taken
+    /// within `sessionWindow` and, when both are geotagged, within
+    /// `sessionProximityMeters`. Gates the relaxed-grouping pass so a
+    /// same-backdrop series of different poses can group without loosening
+    /// similarity across the whole library. False when either lacks a capture
+    /// date (then only the strict visual threshold applies).
+    nonisolated func sameSession(_ a: AnalyzedPhoto, _ b: AnalyzedPhoto) -> Bool {
+        guard let da = a.captureDate, let db = b.captureDate,
+              abs(da.timeIntervalSince(db)) <= SimilaritySensitivity.sessionWindow
+        else { return false }
+        if let alat = a.latitude, let alon = a.longitude,
+           let blat = b.latitude, let blon = b.longitude {
+            return GeoDistance.meters(lat1: alat, lon1: alon, lat2: blat, lon2: blon)
+                <= SimilaritySensitivity.sessionProximityMeters
+        }
+        return true
     }
 
     /// Vision feature-print distance when available, else a normalized Hamming

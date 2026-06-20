@@ -78,4 +78,63 @@ final class DuplicateGrouperTests: XCTestCase {
         XCTAssertTrue(grouper.group(photos, sensitivity: .conservative).isEmpty)
         XCTAssertEqual(grouper.group(photos, sensitivity: .aggressive).count, 1)
     }
+
+    // MARK: - Session-relaxed grouping (same backdrop, different poses)
+
+    // 20 bits apart → 0.3125: above the conservative strict threshold (0.30) but
+    // within its relaxed threshold (0.50). So it groups under conservative *only*
+    // when the two are in the same shooting session.
+    private let keeperHash: UInt64 = 0
+    private let poseHash: UInt64 = 0x0000_0000_000F_FFFF
+    private let sessionStart = Date(timeIntervalSince1970: 1_000_000)
+
+    private func photo(_ id: String, hash: UInt64, date: Date? = nil,
+                       lat: Double? = nil, lon: Double? = nil) -> AnalyzedPhoto {
+        AnalyzedPhoto(id: id, pixelCount: 1000, blockingKey: "block", hash: hash,
+                      feature: nil, captureDate: date, latitude: lat, longitude: lon)
+    }
+
+    func testSameSessionGroupsDifferentPoses() {
+        let photos = [
+            photo("a", hash: keeperHash, date: sessionStart),
+            photo("b", hash: poseHash, date: sessionStart.addingTimeInterval(60)),
+        ]
+        let groups = grouper.group(photos, sensitivity: .conservative)
+        XCTAssertEqual(groups.count, 1)
+        XCTAssertEqual(Set(groups[0].memberIdentifiers), ["a", "b"])
+    }
+
+    func testFarApartInTimeStaysSeparate() {
+        let photos = [
+            photo("a", hash: keeperHash, date: sessionStart),
+            photo("b", hash: poseHash, date: sessionStart.addingTimeInterval(7200)),
+        ]
+        XCTAssertTrue(grouper.group(photos, sensitivity: .conservative).isEmpty)
+    }
+
+    func testMissingDatesUseStrictThresholdOnly() {
+        let photos = [
+            photo("a", hash: keeperHash),
+            photo("b", hash: poseHash),
+        ]
+        XCTAssertTrue(grouper.group(photos, sensitivity: .conservative).isEmpty)
+    }
+
+    func testSameTimeButDistantLocationStaysSeparate() {
+        let photos = [
+            photo("a", hash: keeperHash, date: sessionStart, lat: 40.7128, lon: -74.0060),
+            photo("b", hash: poseHash, date: sessionStart.addingTimeInterval(60),
+                  lat: 34.0522, lon: -118.2437),
+        ]
+        XCTAssertTrue(grouper.group(photos, sensitivity: .conservative).isEmpty)
+    }
+
+    func testSameSessionWithCloseLocationGroups() {
+        let photos = [
+            photo("a", hash: keeperHash, date: sessionStart, lat: 40.7128, lon: -74.0060),
+            photo("b", hash: poseHash, date: sessionStart.addingTimeInterval(60),
+                  lat: 40.7129, lon: -74.0060),
+        ]
+        XCTAssertEqual(grouper.group(photos, sensitivity: .conservative).count, 1)
+    }
 }

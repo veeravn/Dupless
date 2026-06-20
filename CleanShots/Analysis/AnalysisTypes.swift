@@ -26,13 +26,30 @@ struct AnalyzedPhoto {
     let blockingKey: String
     let hash: UInt64
     let feature: VNFeaturePrintObservation?
+    /// Capture time + coordinates, used to relax visual grouping for photos shot
+    /// in the same short session (e.g. a same-backdrop series of different poses).
+    let captureDate: Date?
+    let latitude: Double?
+    let longitude: Double?
 
-    init(id: String, pixelCount: Int, blockingKey: String, hash: UInt64, feature: VNFeaturePrintObservation? = nil) {
+    init(
+        id: String,
+        pixelCount: Int,
+        blockingKey: String,
+        hash: UInt64,
+        feature: VNFeaturePrintObservation? = nil,
+        captureDate: Date? = nil,
+        latitude: Double? = nil,
+        longitude: Double? = nil
+    ) {
         self.id = id
         self.pixelCount = pixelCount
         self.blockingKey = blockingKey
         self.hash = hash
         self.feature = feature
+        self.captureDate = captureDate
+        self.latitude = latitude
+        self.longitude = longitude
     }
 }
 
@@ -80,7 +97,10 @@ struct CachedAnalysis: Sendable, Equatable {
             pixelCount: pixelCount,
             blockingKey: blockingKey,
             hash: hash,
-            feature: featurePrintData.flatMap(FeaturePrintArchive.unarchive)
+            feature: featurePrintData.flatMap(FeaturePrintArchive.unarchive),
+            captureDate: metadata.creationDate,
+            latitude: metadata.latitude,
+            longitude: metadata.longitude
         )
     }
 
