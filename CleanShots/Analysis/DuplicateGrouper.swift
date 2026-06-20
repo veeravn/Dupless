@@ -1,9 +1,16 @@
+import Foundation
+import OSLog
 import Vision
 
 /// Pure grouping logic: blocking → pairwise similarity → connected components.
 /// No PhotoKit dependency, so it is fully unit-testable with synthetic inputs.
 struct DuplicateGrouper {
     private let featureService = VisionFeaturePrintService()
+
+    /// DEBUG-only log of per-pair grouping decisions, for tuning thresholds from
+    /// real photos. View in Xcode/Console with subsystem "CleanShots",
+    /// category "grouping". Logs ids/distances only — never image content.
+    private static let log = Logger(subsystem: "CleanShots", category: "grouping")
 
     nonisolated func group(_ analyzed: [AnalyzedPhoto], sensitivity: SimilaritySensitivity) -> [ScanGroupResult] {
         guard !analyzed.isEmpty else { return [] }
@@ -23,6 +30,10 @@ struct DuplicateGrouper {
                     let hamming = PerceptualHashService.hammingDistance(a.hash, b.hash)
                     let withinPrefilter = hamming <= sensitivity.hammingPrefilter
                     let session = sameSession(a, b)
+                    #if DEBUG
+                    logPair(a, b, hamming: hamming, withinPrefilter: withinPrefilter,
+                            session: session, sensitivity: sensitivity)
+                    #endif
                     // The Hamming prefilter only gates the strict path. A pose
                     // change can shift the perceptual hash past it, so same-session
                     // pairs skip the prefilter and get a real feature-distance check
@@ -63,6 +74,26 @@ struct DuplicateGrouper {
         }
         return results.sorted { $0.confidence > $1.confidence }
     }
+
+    #if DEBUG
+    /// Logs one pair's grouping signals when they're plausibly related (same
+    /// session, or feature distance within a generous bound). Lets us read the
+    /// real hamming/feature distances for a series that isn't grouping and tune
+    /// `featureDistanceThreshold` / `sessionRelaxedThreshold` from data.
+    private func logPair(_ a: AnalyzedPhoto, _ b: AnalyzedPhoto, hamming: Int,
+                         withinPrefilter: Bool, session: Bool, sensitivity: SimilaritySensitivity) {
+        let d = distance(a, b)
+        guard session || d <= 1.0 else { return }
+        let gap = a.captureDate.flatMap { ca in b.captureDate.map { abs(ca.timeIntervalSince($0)) } } ?? -1
+        let grouped = (withinPrefilter && d <= sensitivity.featureDistanceThreshold)
+            || (session && d <= sensitivity.sessionRelaxedThreshold)
+        let line = String(
+            format: "%@ × %@  hamming=%d  feat=%.3f  gapSec=%.0f  session=%@  prefilter=%@  → %@",
+            String(a.id.suffix(8)), String(b.id.suffix(8)), hamming, d, gap,
+            session ? "Y" : "N", withinPrefilter ? "Y" : "N", grouped ? "GROUP" : "skip")
+        Self.log.debug("\(line, privacy: .public)")
+    }
+    #endif
 
     /// Whether two photos belong to the same short shooting session — taken
     /// within `sessionWindow` and, when both are geotagged, within
