@@ -8,9 +8,13 @@ struct DuplicateGrouper {
     private let featureService = VisionFeaturePrintService()
 
     /// DEBUG-only log of per-pair grouping decisions, for tuning thresholds from
-    /// real photos. View in Xcode/Console with subsystem "CleanShots",
-    /// category "grouping". Logs ids/distances only — never image content.
+    /// real photos. Off by default; enable by setting the `CLEANSHOTS_GROUP_LOG`
+    /// environment variable in the Run scheme. View in Xcode/Console with
+    /// subsystem "CleanShots", category "grouping". Logs ids/distances only —
+    /// never image content.
     private static let log = Logger(subsystem: "CleanShots", category: "grouping")
+    private static let pairLoggingEnabled =
+        ProcessInfo.processInfo.environment["CLEANSHOTS_GROUP_LOG"] != nil
 
     nonisolated func group(_ analyzed: [AnalyzedPhoto], sensitivity: SimilaritySensitivity) -> [ScanGroupResult] {
         guard !analyzed.isEmpty else { return [] }
@@ -82,6 +86,7 @@ struct DuplicateGrouper {
     /// `featureDistanceThreshold` / `sessionRelaxedThreshold` from data.
     private func logPair(_ a: AnalyzedPhoto, _ b: AnalyzedPhoto, hamming: Int,
                          withinPrefilter: Bool, session: Bool, sensitivity: SimilaritySensitivity) {
+        guard Self.pairLoggingEnabled else { return }
         let d = distance(a, b)
         guard session || d <= 1.0 else { return }
         let gap = a.captureDate.flatMap { ca in b.captureDate.map { abs(ca.timeIntervalSince($0)) } } ?? -1
@@ -89,7 +94,7 @@ struct DuplicateGrouper {
             || (session && d <= sensitivity.sessionRelaxedThreshold)
         let line = String(
             format: "%@ × %@  hamming=%d  feat=%.3f  gapSec=%.0f  session=%@  prefilter=%@  → %@",
-            String(a.id.suffix(8)), String(b.id.suffix(8)), hamming, d, gap,
+            String(a.id.prefix(6)), String(b.id.prefix(6)), hamming, d, gap,
             session ? "Y" : "N", withinPrefilter ? "Y" : "N", grouped ? "GROUP" : "skip")
         Self.log.debug("\(line, privacy: .public)")
     }
