@@ -137,4 +137,26 @@ final class DuplicateGrouperTests: XCTestCase {
         ]
         XCTAssertEqual(grouper.group(photos, sensitivity: .conservative).count, 1)
     }
+
+    // 30 bits apart → exceeds the Hamming prefilter (22), so the strict path
+    // rejects the pair outright. A pose change can shift the perceptual hash this
+    // far, so a same-session pair must bypass the prefilter and still group via
+    // the relaxed feature check (30/64 ≈ 0.47 ≤ conservative relaxed 0.50).
+    private let farHash: UInt64 = 0x0000_0000_3FFF_FFFF // 30 bits set
+
+    func testSameSessionGroupsPastHammingPrefilter() {
+        let photos = [
+            photo("a", hash: keeperHash, date: sessionStart),
+            photo("b", hash: farHash, date: sessionStart.addingTimeInterval(60)),
+        ]
+        XCTAssertEqual(grouper.group(photos, sensitivity: .conservative).count, 1)
+    }
+
+    func testPastPrefilterStaysSeparateWhenNotSameSession() {
+        let photos = [
+            photo("a", hash: keeperHash),
+            photo("b", hash: farHash), // no dates → strict path only, prefilter rejects
+        ]
+        XCTAssertTrue(grouper.group(photos, sensitivity: .aggressive).isEmpty)
+    }
 }

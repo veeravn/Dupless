@@ -20,12 +20,18 @@ struct DuplicateGrouper {
                 for j in (i + 1)..<indices.count {
                     let a = analyzed[indices[i]]
                     let b = analyzed[indices[j]]
-                    guard PerceptualHashService.hammingDistance(a.hash, b.hash) <= sensitivity.hammingPrefilter
-                    else { continue }
+                    let hamming = PerceptualHashService.hammingDistance(a.hash, b.hash)
+                    let withinPrefilter = hamming <= sensitivity.hammingPrefilter
+                    let session = sameSession(a, b)
+                    // The Hamming prefilter only gates the strict path. A pose
+                    // change can shift the perceptual hash past it, so same-session
+                    // pairs skip the prefilter and get a real feature-distance check
+                    // — otherwise a same-backdrop series never even reaches it.
+                    guard withinPrefilter || session else { continue }
                     let d = distance(a, b)
-                    if d <= sensitivity.featureDistanceThreshold {
+                    if withinPrefilter, d <= sensitivity.featureDistanceThreshold {
                         unionFind.union(indices[i], indices[j])
-                    } else if d <= sensitivity.sessionRelaxedThreshold, sameSession(a, b) {
+                    } else if session, d <= sensitivity.sessionRelaxedThreshold {
                         // Same shooting session: a pose change against the same
                         // backdrop still groups, so the series collapses to one
                         // keeper instead of staying ungrouped.

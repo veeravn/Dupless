@@ -56,7 +56,7 @@ enum SimilaritySensitivity: String, CaseIterable, Identifiable, Sendable {
 
     /// Photos taken within this window of each other are treated as one shooting
     /// session for the relaxed-grouping pass.
-    static let sessionWindow: TimeInterval = 300
+    static let sessionWindow: TimeInterval = 600
 
     /// When both photos are geotagged, the relaxed pass also requires them to be
     /// within this distance — a same-backdrop series is a single place.
