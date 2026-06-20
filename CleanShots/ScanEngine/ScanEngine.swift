@@ -4,6 +4,11 @@ import SwiftData
 import SwiftUI
 
 private let scanLog = Logger(subsystem: "CleanShots", category: "scan")
+/// DEBUG-only log of content-classification decisions during a content-scoped
+/// scan, for tuning which Vision labels a subject should match. Enable by setting
+/// the `CLEANSHOTS_CONTENT_LOG` environment variable in the Run scheme. View with
+/// subsystem "CleanShots", category "content". Logs ids/labels only.
+private let contentLog = Logger(subsystem: "CleanShots", category: "content")
 
 /// Orchestrates a scan: fetch scope → analyze off-main (caching each result for
 /// resume) → group → persist. Observable so ScanProgressView can react.
@@ -228,6 +233,7 @@ final class ScanEngine {
     private func contentFiltered(_ ids: [String], query: String) async -> [String] {
         let loaderRef = loader
         let classifier = PhotoContentClassifier()
+        let logEnabled = ProcessInfo.processInfo.environment["CLEANSHOTS_CONTENT_LOG"] != nil
         return await Task.detached(priority: .userInitiated) {
             var kept: [String] = []
             for id in ids {
@@ -235,9 +241,16 @@ final class ScanEngine {
                 guard let asset = fetch.firstObject,
                       let image = await loaderRef.thumbnail(for: asset)
                 else { continue }
-                if classifier.matches(query: query, labels: classifier.labels(for: image)) {
-                    kept.append(id)
+                let labels = classifier.labels(for: image)
+                let matched = classifier.matches(query: query, labels: labels)
+                if matched { kept.append(id) }
+                #if DEBUG
+                if logEnabled {
+                    let top = labels.prefix(10).joined(separator: ", ")
+                    contentLog.debug(
+                        "\(String(id.prefix(6)), privacy: .public) match=\(matched ? "Y" : "N") labels=[\(top, privacy: .public)]")
                 }
+                #endif
             }
             return kept
         }.value
