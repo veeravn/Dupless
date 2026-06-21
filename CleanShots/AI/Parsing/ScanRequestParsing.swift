@@ -62,7 +62,8 @@ extension ParsedScan {
         case .dateRange:
             scopeText = "\(noun) from \(datePhrase?.spokenName ?? "the chosen dates")"
         }
+        let place = command.locationQuery.map { " at \($0)" } ?? ""
         let screenshots = command.includeScreenshots ? "including screenshots" : "excluding screenshots"
-        return "\(command.mode.speechName.capitalized) scan of \(scopeText), \(screenshots)."
+        return "\(command.mode.speechName.capitalized) scan of \(scopeText)\(place), \(screenshots)."
     }
 }

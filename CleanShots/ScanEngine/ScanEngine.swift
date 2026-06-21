@@ -68,6 +68,12 @@ final class ScanEngine {
             targets = await contentFiltered(targets, query: query)
         }
 
+        // Location scoping (opt-in): match a named place by reverse-geocoding each
+        // photo's coordinates. Skipped entirely when the opt-in is off.
+        if let place = options.locationQuery, !place.isEmpty, AppSettings.locationMatchingEnabled {
+            targets = await locationFiltered(targets, query: place)
+        }
+
         let checkpoint = upsertCheckpoint(
             signature: signature,
             scopeDescription: scope.displayName,
@@ -256,6 +262,28 @@ final class ScanEngine {
                         "\(String(id.prefix(6)), privacy: .public) match=\(matched ? "Y" : "N") labels=[\(top, privacy: .public)]")
                 }
                 #endif
+            }
+            return kept
+        }.value
+    }
+
+    /// Narrows targets to photos taken at a named place, by reverse-geocoding each
+    /// photo's location (the one networked step, behind the opt-in). Photos with
+    /// no location are dropped. Geocodes are cached per venue, so a trip resolves
+    /// in a handful of network calls.
+    private func locationFiltered(_ ids: [String], query: String) async -> [String] {
+        let service = PhotoLocationService()
+        let matcher = PhotoLocationMatcher()
+        return await Task.detached(priority: .userInitiated) {
+            var kept: [String] = []
+            for id in ids {
+                let fetch = PHAsset.fetchAssets(withLocalIdentifiers: [id], options: nil)
+                guard let asset = fetch.firstObject, let loc = asset.location else { continue }
+                let fields = await service.placeFields(
+                    latitude: loc.coordinate.latitude, longitude: loc.coordinate.longitude)
+                if matcher.matches(query: query, placeFields: fields) {
+                    kept.append(id)
+                }
             }
             return kept
         }.value

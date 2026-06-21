@@ -52,12 +52,13 @@ struct FoundationModelScanParser: ScanRequestParsing {
         }
 
         // "none"/blank means scan the whole scope; otherwise narrow by subject.
-        let trimmed = draft.contentQuery.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        let contentQuery = (trimmed.isEmpty || trimmed == "none") ? nil : trimmed
+        let contentQuery = Self.cleaned(draft.contentQuery)
+        let locationQuery = Self.cleaned(draft.locationQuery)
 
         let command = AIScanCommand(
             target: target, mode: mode,
-            includeScreenshots: draft.includeScreenshots, contentQuery: contentQuery
+            includeScreenshots: draft.includeScreenshots,
+            contentQuery: contentQuery, locationQuery: locationQuery
         )
         return ParsedScan(
             command: command,
@@ -71,6 +72,13 @@ struct FoundationModelScanParser: ScanRequestParsing {
     /// contains that phrase's keyword (week/month/year/weekend/yesterday/today).
     /// This stops vague recency ("recent", "lately") from being inflated into a
     /// concrete range like last week.
+    /// Normalizes a model free-text field: trims, lowercases, maps "none"/blank
+    /// to nil.
+    static func cleaned(_ value: String) -> String? {
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        return (trimmed.isEmpty || trimmed == "none") ? nil : trimmed
+    }
+
     static func corroboratedDatePhrase(_ phrase: DatePhrase?, in text: String) -> DatePhrase? {
         guard let phrase else { return nil }
         let lower = text.lowercased()
@@ -92,9 +100,9 @@ struct FoundationModelScanParser: ScanRequestParsing {
         set a date range when the request explicitly names a time period such as \
         'yesterday', 'last weekend', or 'last month'. Treat vague words like \
         'recent', 'recently', or 'lately' as no date range ('none') and capture \
-        the subject instead. Never invent dates. For the subject, use only a \
-        generic visual category an image classifier could recognize (e.g. \
-        'beach', 'mall', 'wedding') — not a specific place or person name. The \
+        the subject instead. Never invent dates. Put a generic visual subject \
+        (e.g. 'beach', 'food', 'dog') in contentQuery, and a specific place or \
+        landmark (e.g. 'Mall of America') in locationQuery — not the reverse. The \
         app always requires the user to review before anything is deleted.
         """
 }
@@ -112,6 +120,9 @@ struct ScanRequestDraft {
     @Guide(description: "Whether screenshots should be included in the scan.")
     var includeScreenshots: Bool
 
-    @Guide(description: "A single GENERIC VISUAL subject to narrow the scan to, like 'birthday', 'beach', 'dog', 'food', or 'mall'. An on-device image classifier matches this, and it only recognizes visual categories — NOT specific place names, landmarks, events, or people. If the request names a specific place/event/person, reduce it to its general visual category if one is obvious (e.g. 'Mall of America' -> 'mall', 'Sarah's wedding' -> 'wedding'); otherwise use 'none'.")
+    @Guide(description: "A single GENERIC VISUAL subject, like 'birthday', 'beach', 'dog', or 'food'. Matched by an on-device image classifier, which only recognizes visual categories. Use 'none' if no visual subject is named, or if the request names a specific PLACE — put places in locationQuery instead.")
     var contentQuery: String
+
+    @Guide(description: "A specific place, business, or landmark the request mentions, like 'Mall of America', 'Yellowstone', or 'Central Park'. Used to match photos taken there by their location. Use 'none' if no specific place is named.")
+    var locationQuery: String
 }

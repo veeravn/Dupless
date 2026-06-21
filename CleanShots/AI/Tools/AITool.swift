@@ -39,6 +39,9 @@ struct AIScanCommand: Equatable, Sendable {
     /// Optional subject/theme to narrow the scan to (e.g. "birthday"). Nil scans
     /// the whole scope.
     var contentQuery: String?
+    /// Optional place/landmark to narrow the scan to (e.g. "mall of america"),
+    /// matched by photo location. Requires the opt-in location lookup.
+    var locationQuery: String?
     /// Always true — the model cannot bypass manual review.
     let requireReview: Bool = true
 
@@ -51,7 +54,10 @@ struct AIScanCommand: Equatable, Sendable {
         }
         return ScanRequest(
             scope: scope,
-            options: ScanOptions(includeScreenshots: includeScreenshots, excludeFavorites: true, contentQuery: contentQuery),
+            options: ScanOptions(
+                includeScreenshots: includeScreenshots, excludeFavorites: true,
+                contentQuery: contentQuery, locationQuery: locationQuery
+            ),
             sensitivity: mode.sensitivity
         )
     }

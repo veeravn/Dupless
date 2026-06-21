@@ -34,10 +34,14 @@ struct ScanOptions: Equatable, Hashable {
     /// on-device content classification after the scope is fetched. Nil scans the
     /// whole scope. PhotoKit can't filter by content, so this is a post-fetch pass.
     var contentQuery: String?
+    /// Optional place/landmark to narrow the scan to (e.g. "mall of america"),
+    /// applied by reverse-geocoding each photo's location. Requires the opt-in
+    /// location lookup (off by default); ignored otherwise.
+    var locationQuery: String?
 
     static let `default` = ScanOptions()
 
-    var signature: String { "scr:\(includeScreenshots)|fav:\(excludeFavorites)|q:\(contentQuery ?? "")" }
+    var signature: String { "scr:\(includeScreenshots)|fav:\(excludeFavorites)|q:\(contentQuery ?? "")|loc:\(locationQuery ?? "")" }
 }
 
 /// Fetches `PHAsset`s for a given scope. Pure PhotoKit; no image data loaded here.
