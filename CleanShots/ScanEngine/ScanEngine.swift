@@ -25,6 +25,10 @@ final class ScanEngine {
     private(set) var progress: Double = 0
     private(set) var lastError: String?
     private(set) var lastResultCount = 0
+    /// Number of photos actually scanned — i.e. the scope after any content
+    /// filter. Lets the UI confirm an AI/content-scoped scan found matches even
+    /// when there are no duplicates among them.
+    private(set) var scannedCount = 0
     /// Photos in the scan that couldn't be analyzed (e.g. iCloud-only, not
     /// downloaded). Surfaced after a scan so skipped photos aren't hidden.
     private(set) var skippedCount = 0
@@ -160,6 +164,7 @@ final class ScanEngine {
         stage = .indexing
 
         let targets = checkpoint.targetIdentifiers
+        scannedCount = targets.count
         let allCached = await analyzePending(targets: targets, signature: checkpoint.signature, modelContext: modelContext)
         skippedCount = ScanCoverage.skippedCount(targets: targets, analyzed: allCached)
 

@@ -8,6 +8,12 @@ enum ScanJob {
     case resume(ScanCheckpointRecord)
 
     var isDroneBurst: Bool { if case .droneBurst = self { return true }; return false }
+
+    /// The content/subject filter for an AI-scoped scan, if any.
+    var contentQuery: String? {
+        if case let .fresh(_, options, _) = self { return options.contentQuery }
+        return nil
+    }
 }
 
 /// Runs the scan and shows the five stages from the spec. On completion, offers
@@ -42,6 +48,14 @@ struct ScanProgressView: View {
             if engine.isThrottling {
                 Label("Slowing down to protect your device's temperature and battery.",
                       systemImage: "thermometer.medium")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 40)
+            }
+
+            if finished, let query = job.contentQuery {
+                contentMatchNote(query: query)
                     .font(.footnote)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -104,6 +118,18 @@ struct ScanProgressView: View {
             Text("Review ^[\(engine.lastResultCount) Session](inflect: true)")
         } else {
             Text("Review ^[\(engine.lastResultCount) Group](inflect: true)")
+        }
+    }
+
+    /// Confirms how many photos the AI/content filter matched, so a "no
+    /// duplicates" result is distinguishable from "no photos matched".
+    @ViewBuilder
+    private func contentMatchNote(query: String) -> some View {
+        if engine.scannedCount > 0 {
+            Label("Found ^[\(engine.scannedCount) photo](inflect: true) matching “\(query)”.",
+                  systemImage: "sparkle.magnifyingglass")
+        } else {
+            Label("No photos matched “\(query)”.", systemImage: "sparkle.magnifyingglass")
         }
     }
 }
