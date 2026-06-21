@@ -92,8 +92,10 @@ struct FoundationModelScanParser: ScanRequestParsing {
         set a date range when the request explicitly names a time period such as \
         'yesterday', 'last weekend', or 'last month'. Treat vague words like \
         'recent', 'recently', or 'lately' as no date range ('none') and capture \
-        the subject instead. Never invent dates. The app always requires the user \
-        to review before anything is deleted.
+        the subject instead. Never invent dates. For the subject, use only a \
+        generic visual category an image classifier could recognize (e.g. \
+        'beach', 'mall', 'wedding') — not a specific place or person name. The \
+        app always requires the user to review before anything is deleted.
         """
 }
 
@@ -110,6 +112,6 @@ struct ScanRequestDraft {
     @Guide(description: "Whether screenshots should be included in the scan.")
     var includeScreenshots: Bool
 
-    @Guide(description: "A single subject or theme to narrow the scan to, like 'birthday', 'beach', 'dog', or 'food'. Use 'none' when the request names no specific subject.")
+    @Guide(description: "A single GENERIC VISUAL subject to narrow the scan to, like 'birthday', 'beach', 'dog', 'food', or 'mall'. An on-device image classifier matches this, and it only recognizes visual categories — NOT specific place names, landmarks, events, or people. If the request names a specific place/event/person, reduce it to its general visual category if one is obvious (e.g. 'Mall of America' -> 'mall', 'Sarah's wedding' -> 'wedding'); otherwise use 'none'.")
     var contentQuery: String
 }
