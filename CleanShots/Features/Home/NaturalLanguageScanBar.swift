@@ -34,6 +34,7 @@ struct NaturalLanguageScanBar: View {
                 ScanConfirmationView(
                     summary: pending.summary,
                     understood: pending.understood,
+                    source: pending.source,
                     onScan: { model.confirm() },
                     onCancel: { model.cancel() }
                 )
@@ -59,6 +60,7 @@ struct NaturalLanguageScanBar: View {
 private struct ScanConfirmationView: View {
     let summary: String
     let understood: Bool
+    let source: ParsedScan.Source
     let onScan: () -> Void
     let onCancel: () -> Void
 
@@ -74,6 +76,11 @@ private struct ScanConfirmationView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding()
                 .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 12))
+
+            Label(source.label, systemImage: source.systemImage)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .accessibilityLabel(source.label)
 
             if !understood {
                 Label("I wasn't sure about parts of that, so I used safe defaults. You can adjust after scanning.",

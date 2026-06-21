@@ -36,6 +36,9 @@ struct AIScanCommand: Equatable, Sendable {
     var target: Target
     var mode: DedupeModeAppEnum
     var includeScreenshots: Bool = true
+    /// Optional subject/theme to narrow the scan to (e.g. "birthday"). Nil scans
+    /// the whole scope.
+    var contentQuery: String?
     /// Always true — the model cannot bypass manual review.
     let requireReview: Bool = true
 
@@ -48,7 +51,7 @@ struct AIScanCommand: Equatable, Sendable {
         }
         return ScanRequest(
             scope: scope,
-            options: ScanOptions(includeScreenshots: includeScreenshots, excludeFavorites: true),
+            options: ScanOptions(includeScreenshots: includeScreenshots, excludeFavorites: true, contentQuery: contentQuery),
             sensitivity: mode.sensitivity
         )
     }

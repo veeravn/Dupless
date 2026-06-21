@@ -4,6 +4,11 @@ import SwiftData
 import SwiftUI
 
 private let scanLog = Logger(subsystem: "CleanShots", category: "scan")
+/// DEBUG-only log of content-classification decisions during a content-scoped
+/// scan, for tuning which Vision labels a subject should match. Enable by setting
+/// the `CLEANSHOTS_CONTENT_LOG` environment variable in the Run scheme. View with
+/// subsystem "CleanShots", category "content". Logs ids/labels only.
+private let contentLog = Logger(subsystem: "CleanShots", category: "content")
 
 /// Orchestrates a scan: fetch scope → analyze off-main (caching each result for
 /// resume) → group → persist. Observable so ScanProgressView can react.
@@ -20,6 +25,10 @@ final class ScanEngine {
     private(set) var progress: Double = 0
     private(set) var lastError: String?
     private(set) var lastResultCount = 0
+    /// Number of photos actually scanned — i.e. the scope after any content
+    /// filter. Lets the UI confirm an AI/content-scoped scan found matches even
+    /// when there are no duplicates among them.
+    private(set) var scannedCount = 0
     /// Photos in the scan that couldn't be analyzed (e.g. iCloud-only, not
     /// downloaded). Surfaced after a scan so skipped photos aren't hidden.
     private(set) var skippedCount = 0
@@ -30,6 +39,10 @@ final class ScanEngine {
     private let loader = PhotoImageLoader()
 
     static let lastScanDateKey = "lastScanDate"
+
+    /// Persist analyzed features in batches of this many, rather than per photo,
+    /// to keep large scans from thrashing the SQLite write-ahead log.
+    private static let saveBatchSize = 100
 
     // MARK: - Entry points
 
@@ -48,6 +61,12 @@ final class ScanEngine {
         var targets: [String] = []
         targets.reserveCapacity(fetchResult.count)
         fetchResult.enumerateObjects { asset, _, _ in targets.append(asset.localIdentifier) }
+
+        // Content-aware scoping: when the request named a subject, keep only the
+        // photos whose on-device classification matches before anything is cached.
+        if let query = options.contentQuery, !query.isEmpty {
+            targets = await contentFiltered(targets, query: query)
+        }
 
         let checkpoint = upsertCheckpoint(
             signature: signature,
@@ -145,6 +164,7 @@ final class ScanEngine {
         stage = .indexing
 
         let targets = checkpoint.targetIdentifiers
+        scannedCount = targets.count
         let allCached = await analyzePending(targets: targets, signature: checkpoint.signature, modelContext: modelContext)
         skippedCount = ScanCoverage.skippedCount(targets: targets, analyzed: allCached)
 
@@ -199,11 +219,46 @@ final class ScanEngine {
                 persistFeature(analysis, in: modelContext)
                 done += 1
                 progress = Double(done) / Double(total)
+                // Batch saves: one write per ~100 photos instead of per photo,
+                // so a large scan doesn't thrash the SQLite WAL. A crash re-does
+                // at most one batch on resume.
+                if done % Self.saveBatchSize == 0 { try? modelContext.save() }
                 await throttleIfNeeded()
             }
+            try? modelContext.save() // flush the final partial batch
             isThrottling = false
         }
         return cachedAnalyses(for: targets, in: modelContext)
+    }
+
+    /// Narrows targets to photos whose on-device content classification matches
+    /// `query` (e.g. "birthday"). Runs off-main; loads each thumbnail once.
+    /// Resolving the asset inside the detached task keeps non-Sendable `PHAsset`
+    /// off the actor boundary.
+    private func contentFiltered(_ ids: [String], query: String) async -> [String] {
+        let loaderRef = loader
+        let classifier = PhotoContentClassifier()
+        let logEnabled = ProcessInfo.processInfo.environment["CLEANSHOTS_CONTENT_LOG"] != nil
+        return await Task.detached(priority: .userInitiated) {
+            var kept: [String] = []
+            for id in ids {
+                let fetch = PHAsset.fetchAssets(withLocalIdentifiers: [id], options: nil)
+                guard let asset = fetch.firstObject,
+                      let image = await loaderRef.thumbnail(for: asset)
+                else { continue }
+                let labels = classifier.labels(for: image)
+                let matched = classifier.matches(query: query, labels: labels)
+                if matched { kept.append(id) }
+                #if DEBUG
+                if logEnabled {
+                    let top = labels.prefix(10).joined(separator: ", ")
+                    contentLog.debug(
+                        "\(String(id.prefix(6)), privacy: .public) match=\(matched ? "Y" : "N") labels=[\(top, privacy: .public)]")
+                }
+                #endif
+            }
+            return kept
+        }.value
     }
 
     /// Slows analysis between photos when the device is hot or in Low Power Mode,
@@ -244,7 +299,8 @@ final class ScanEngine {
         } else {
             context.insert(ImageFeatureRecord(cached: analysis))
         }
-        try? context.save()
+        // Saving is batched by the caller (see analyzePending) to avoid a
+        // per-photo write on large scans.
     }
 
     private func upsertCheckpoint(

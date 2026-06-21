@@ -39,6 +39,32 @@ enum SimilaritySensitivity: String, CaseIterable, Identifiable, Sendable {
     /// Generous Hamming prefilter (out of 64). The feature print is the real gate;
     /// this just avoids running Vision distance on obviously unrelated pairs.
     var hammingPrefilter: Int { 22 }
+
+    /// Looser feature-print distance applied only to photos shot in the same short
+    /// session (see `sessionWindow`). A pose change against the same backdrop
+    /// raises whole-image distance past `featureDistanceThreshold`, so without
+    /// this a "same background, different pose" series never groups. Gating on
+    /// time (and location, when geotagged) keeps the relaxation from grouping
+    /// unrelated look-alikes elsewhere in the library.
+    var sessionRelaxedThreshold: Float {
+        switch self {
+        case .conservative: return 0.50
+        // Real-device tuning: a same-backdrop portrait/event series tops out
+        // around feat 0.91, while cross-event look-alikes sit at 0.99+, so 0.88
+        // captures the full series at the default sensitivity without bleeding
+        // across events (the session gate already constrains it).
+        case .balanced: return 0.88
+        case .aggressive: return 0.92
+        }
+    }
+
+    /// Photos taken within this window of each other are treated as one shooting
+    /// session for the relaxed-grouping pass.
+    static let sessionWindow: TimeInterval = 600
+
+    /// When both photos are geotagged, the relaxed pass also requires them to be
+    /// within this distance — a same-backdrop series is a single place.
+    static let sessionProximityMeters: Double = 60
 }
 
 /// Standard union-find (disjoint set) for grouping similar photos into
