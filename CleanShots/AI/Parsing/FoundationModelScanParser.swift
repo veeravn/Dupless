@@ -52,7 +52,11 @@ struct FoundationModelScanParser: ScanRequestParsing {
         }
 
         // "none"/blank means scan the whole scope; otherwise narrow by subject.
-        let contentQuery = Self.cleaned(draft.contentQuery)
+        // Corroborate the visual subject the same way dates are: the model likes
+        // to echo an example from its own guide (e.g. 'dog') when no subject is
+        // named, which silently zeroes out the scan. Only honor a contentQuery the
+        // user actually typed.
+        let contentQuery = Self.corroboratedContentQuery(Self.cleaned(draft.contentQuery), in: text)
         let locationQuery = Self.cleaned(draft.locationQuery)
 
         let command = AIScanCommand(
@@ -77,6 +81,15 @@ struct FoundationModelScanParser: ScanRequestParsing {
     static func cleaned(_ value: String) -> String? {
         let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         return (trimmed.isEmpty || trimmed == "none") ? nil : trimmed
+    }
+
+    /// A model-chosen visual subject is honored only when the request literally
+    /// contains that word. The model tends to copy an example from its guide
+    /// (e.g. 'dog') when the request names a place but no subject, which would
+    /// otherwise filter the scan down to zero before location matching runs.
+    static func corroboratedContentQuery(_ query: String?, in text: String) -> String? {
+        guard let query else { return nil }
+        return text.lowercased().contains(query) ? query : nil
     }
 
     static func corroboratedDatePhrase(_ phrase: DatePhrase?, in text: String) -> DatePhrase? {
