@@ -33,6 +33,13 @@ struct AIScanCommand: Equatable, Sendable {
         case dateRange(start: Date, end: Date)
     }
 
+    /// Default ceiling for an undated scan — keeps a no-date request fast and cool.
+    static let defaultRecentLimit = 300
+    /// Wider ceiling when a place is named but no date is: location is a post-fetch
+    /// filter, so the candidate window has to reach further back to catch an older
+    /// trip the user didn't date. Still bounded so the scan stays bounded.
+    static let placeScopedRecentLimit = 1000
+
     var target: Target
     var mode: DedupeModeAppEnum
     var includeScreenshots: Bool = true

@@ -43,14 +43,6 @@ struct FoundationModelScanParser: ScanRequestParsing {
         // filter.
         let phrase = Self.corroboratedDatePhrase(DatePhrase(rawValue: draft.datePhrase), in: text)
 
-        let target: AIScanCommand.Target
-        if let phrase {
-            let range = resolver.resolve(phrase)
-            target = .dateRange(start: range.start, end: range.end)
-        } else {
-            target = .recent(limit: 300)
-        }
-
         // "none"/blank means scan the whole scope; otherwise narrow by subject.
         // Corroborate the visual subject the same way dates are: the model likes
         // to echo an example from its own guide (e.g. 'dog') when no subject is
@@ -58,6 +50,14 @@ struct FoundationModelScanParser: ScanRequestParsing {
         // user actually typed.
         let contentQuery = Self.corroboratedContentQuery(Self.cleaned(draft.contentQuery), in: text)
         let locationQuery = Self.cleaned(draft.locationQuery)
+
+        let target: AIScanCommand.Target
+        if let phrase {
+            let range = resolver.resolve(phrase)
+            target = .dateRange(start: range.start, end: range.end)
+        } else {
+            target = .recent(limit: Self.recentLimit(hasLocationQuery: locationQuery != nil))
+        }
 
         let command = AIScanCommand(
             target: target, mode: mode,
@@ -87,6 +87,14 @@ struct FoundationModelScanParser: ScanRequestParsing {
     /// contains that word. The model tends to copy an example from its guide
     /// (e.g. 'dog') when the request names a place but no subject, which would
     /// otherwise filter the scan down to zero before location matching runs.
+    /// Ceiling for an undated recent scan. A named place needs a deeper window
+    /// because location is a post-fetch filter — it can only match photos already
+    /// fetched, so an undated place query must reach further back to catch an
+    /// older trip the user didn't date.
+    static func recentLimit(hasLocationQuery: Bool) -> Int {
+        hasLocationQuery ? AIScanCommand.placeScopedRecentLimit : AIScanCommand.defaultRecentLimit
+    }
+
     static func corroboratedContentQuery(_ query: String?, in text: String) -> String? {
         guard let query else { return nil }
         return text.lowercased().contains(query) ? query : nil
