@@ -6,7 +6,8 @@ protocol AltitudeProviding: Sendable {
     func altitudes(for identifiers: [String]) async -> [String: Double]
 }
 
-extension PhotoAltitudeService: AltitudeProviding {}
+// PhotoAltitudeService declares its AltitudeProviding conformance in its own
+// file — a Sendable-inheriting conformance must live with the type in Swift 6.
 
 /// Never returns altitude — the default for non-drone scans and tests.
 struct NoAltitudeProvider: AltitudeProviding {
