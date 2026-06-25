@@ -9,7 +9,7 @@ import Photos
 /// aren't already on-device simply return no altitude (no iCloud downloads, no
 /// added scan latency for the rest of the library). Assets without GPS altitude
 /// are omitted from the result — "no GPS" is the expected default, not an error.
-struct PhotoAltitudeService {
+struct PhotoAltitudeService: AltitudeProviding {
     func altitudes(for identifiers: [String]) async -> [String: Double] {
         guard !identifiers.isEmpty else { return [:] }
 

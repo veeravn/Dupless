@@ -14,7 +14,7 @@ struct PhotoAccessView: View {
                 .foregroundStyle(.tint)
 
             VStack(spacing: 12) {
-                Text("Find duplicates, privately")
+                Text("Find duplicates")
                     .font(.title.bold())
                     .multilineTextAlignment(.center)
 
