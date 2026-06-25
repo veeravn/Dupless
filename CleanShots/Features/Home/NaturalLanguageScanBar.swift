@@ -35,6 +35,7 @@ struct NaturalLanguageScanBar: View {
                     summary: pending.summary,
                     understood: pending.understood,
                     source: pending.source,
+                    locationQuery: pending.command.locationQuery,
                     onScan: { model.confirm() },
                     onCancel: { model.cancel() }
                 )
@@ -61,10 +62,12 @@ private struct ScanConfirmationView: View {
     let summary: String
     let understood: Bool
     let source: ParsedScan.Source
+    var locationQuery: String?
     let onScan: () -> Void
     let onCancel: () -> Void
 
     @Environment(\.dismiss) private var dismiss
+    @AppStorage("locationMatchingEnabled") private var locationMatching = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -81,6 +84,10 @@ private struct ScanConfirmationView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .accessibilityLabel(source.label)
+
+            if let place = locationQuery {
+                locationOptIn(place: place)
+            }
 
             if !understood {
                 Label("I wasn't sure about parts of that, so I used safe defaults. You can adjust after scanning.",
@@ -108,5 +115,23 @@ private struct ScanConfirmationView: View {
             .controlSize(.large)
         }
         .padding()
+    }
+
+    /// Opt-in for matching a place by location — the one networked step, so it's
+    /// off by default and clearly disclosed.
+    @ViewBuilder
+    private func locationOptIn(place: String) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Toggle(isOn: $locationMatching) {
+                Text("Find \(place) photos by location")
+                    .font(.subheadline)
+            }
+            Text("Looks up where photos were taken using Apple's location service — the only time CleanShots sends data (coordinates, never your photos) off your device. Off keeps everything on-device.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 12))
     }
 }

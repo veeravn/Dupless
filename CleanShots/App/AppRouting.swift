@@ -46,6 +46,7 @@ final class IntentRouter {
 /// Lightweight app preferences shared between the UI and intents.
 enum AppSettings {
     private static let defaultModeKey = "defaultDedupeMode"
+    private static let locationMatchingKey = "locationMatchingEnabled"
 
     static var defaultSensitivity: SimilaritySensitivity {
         get {
@@ -53,5 +54,13 @@ enum AppSettings {
             return SimilaritySensitivity(rawValue: raw) ?? .balanced
         }
         set { UserDefaults.standard.set(newValue.rawValue, forKey: defaultModeKey) }
+    }
+
+    /// Opt-in: match AI place queries (e.g. "Mall of America") by reverse-
+    /// geocoding photo locations. Off by default because it sends coordinates to
+    /// Apple's geocoding service — a network call, unlike the rest of the app.
+    static var locationMatchingEnabled: Bool {
+        get { UserDefaults.standard.bool(forKey: locationMatchingKey) }
+        set { UserDefaults.standard.set(newValue, forKey: locationMatchingKey) }
     }
 }

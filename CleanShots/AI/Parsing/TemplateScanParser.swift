@@ -22,7 +22,7 @@ struct TemplateScanParser: ScanRequestParsing {
             let range = resolver.resolve(phrase)
             target = .dateRange(start: range.start, end: range.end)
         } else {
-            target = .recent(limit: 300)
+            target = .recent(limit: AIScanCommand.defaultRecentLimit)
         }
 
         let command = AIScanCommand(target: target, mode: mode, includeScreenshots: includeScreenshots)
