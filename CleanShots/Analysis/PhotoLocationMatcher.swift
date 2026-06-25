@@ -1,5 +1,6 @@
 import CoreLocation
 import Foundation
+import MapKit
 
 /// Decides whether a place query (e.g. "mall of america") matches the
 /// human-readable fields of a reverse-geocoded location. Pure and unit-tested;
@@ -22,23 +23,22 @@ struct PhotoLocationMatcher: Sendable {
     }
 }
 
-/// Reverse-geocodes photo coordinates to place names, on a network call to
-/// Apple's geocoder. Results are cached by rounded coordinate (a trip's photos
-/// share one place), and calls are serialized — `CLGeocoder` rejects concurrent
-/// or rapid requests. This is the only networked piece of the scan pipeline and
-/// runs only behind the opt-in `AppSettings.locationMatchingEnabled`.
+/// Reverse-geocodes photo coordinates to place names via MapKit's
+/// `MKReverseGeocodingRequest` — a network call to Apple's location service
+/// (the iOS 26 replacement for the deprecated `CLGeocoder`). Results are cached
+/// by rounded coordinate (a trip's photos share one place). This is the only
+/// networked piece of the scan pipeline and runs only behind the opt-in
+/// `AppSettings.locationMatchingEnabled`.
 actor PhotoLocationService {
-    private let geocoder = CLGeocoder()
     private var cache: [String: [String]] = [:]
 
-    /// Human-readable place fields (POI name, areas of interest, locality, …) for
-    /// a coordinate, or empty when geocoding fails / is offline.
+    /// Human-readable place fields (POI name, address, city, region) for a
+    /// coordinate, or empty when geocoding fails / is offline.
     func placeFields(latitude: Double, longitude: Double) async -> [String] {
         let key = Self.key(latitude, longitude)
         if let cached = cache[key] { return cached }
         let location = CLLocation(latitude: latitude, longitude: longitude)
-        let placemarks = (try? await geocoder.reverseGeocodeLocation(location)) ?? []
-        let fields = placemarks.flatMap(Self.fields(from:))
+        let fields = await Self.reverseGeocode(location)
         cache[key] = fields
         return fields
     }
@@ -48,14 +48,27 @@ actor PhotoLocationService {
         String(format: "%.3f,%.3f", lat, lon)
     }
 
-    private static func fields(from placemark: CLPlacemark) -> [String] {
+    /// MapKit's reverse-geocode getter is main-actor isolated, so run it there and
+    /// hand only the Sendable `[String]` back to the actor — `MKMapItem` itself is
+    /// not Sendable and must not cross the boundary.
+    @MainActor
+    private static func reverseGeocode(_ location: CLLocation) async -> [String] {
+        guard let request = MKReverseGeocodingRequest(location: location),
+              let mapItems = try? await request.mapItems else { return [] }
+        return mapItems.flatMap(fields(from:))
+    }
+
+    private static func fields(from item: MKMapItem) -> [String] {
         var fields: [String] = []
-        if let name = placemark.name { fields.append(name) }
-        if let aoi = placemark.areasOfInterest { fields.append(contentsOf: aoi) }
-        if let sub = placemark.subLocality { fields.append(sub) }
-        if let locality = placemark.locality { fields.append(locality) }
-        if let admin = placemark.administrativeArea { fields.append(admin) }
-        if let thoroughfare = placemark.thoroughfare { fields.append(thoroughfare) }
+        if let name = item.name { fields.append(name) }
+        if let address = item.address {
+            fields.append(address.fullAddress)
+            if let short = address.shortAddress { fields.append(short) }
+        }
+        if let rep = item.addressRepresentations {
+            if let city = rep.cityName { fields.append(city) }
+            if let region = rep.regionName { fields.append(region) }
+        }
         return fields
     }
 }
