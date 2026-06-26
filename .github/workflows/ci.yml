@@ -50,7 +50,13 @@ jobs:
             -parallel-testing-enabled NO \
             -resultBundlePath TestResults.xcresult \
             CODE_SIGNING_ALLOWED=NO \
-            | xcbeautify --renderer github-actions
+            | xcbeautify
+        # Note: the default xcbeautify renderer is used deliberately. The
+        # github-actions renderer promotes every error-pattern log line to a PR
+        # annotation, and the app's SwiftData store emits benign CoreData "error"
+        # chatter on the simulator that would otherwise show as dozens of fake
+        # annotations. Real test failures still fail the job and appear in logs and
+        # the uploaded xcresult.
 
       - name: Upload test results
         if: ${{ !cancelled() }}
