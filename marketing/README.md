@@ -11,7 +11,7 @@ they can be uploaded to App Store Connect without resizing.
 
 | File | Screen |
 |------|--------|
-| `screenshots/iphone-6.9/1-onboarding.png`    | "Find duplicates, privately" intro |
+| `screenshots/iphone-6.9/1-onboarding.png`    | "Find duplicates" intro |
 | `screenshots/iphone-6.9/2-home.png`          | Home: Ask CleanShots + actions |
 | `screenshots/iphone-6.9/3-scan-setup.png`    | Scan scope, options, sensitivity |
 | `screenshots/iphone-6.9/4-scan-pipeline.png` | Five-stage on-device scan |
