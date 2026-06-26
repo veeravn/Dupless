@@ -6,6 +6,7 @@ struct DuplessApp: App {
     @State private var authorization = PhotoAuthorizationManager()
     @State private var scanEngine = ScanEngine()
     @State private var router = IntentRouter.shared
+    @State private var entitlements = EntitlementStore()
 
     var body: some Scene {
         WindowGroup {
@@ -13,6 +14,7 @@ struct DuplessApp: App {
                 .environment(authorization)
                 .environment(scanEngine)
                 .environment(router)
+                .environment(entitlements)
         }
         .modelContainer(SharedStore.container)
     }

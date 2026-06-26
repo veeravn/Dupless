@@ -23,7 +23,21 @@ struct DroneBurstSetupView: View {
 
     @State private var startScan = false
 
+    @Environment(EntitlementStore.self) private var entitlements
+
     var body: some View {
+        Group {
+            if entitlements.isPro {
+                setupForm
+            } else {
+                ProLockView(feature: .droneBurst)
+            }
+        }
+        .navigationTitle("Drone / Burst")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private var setupForm: some View {
         Form {
             Section {
                 Picker("Scan", selection: $scope) {
@@ -56,8 +70,6 @@ struct DroneBurstSetupView: View {
                      : "Every session is treated as plain duplicates. Only the best shot of each sequence is kept; different angles may be suggested for removal.")
             }
         }
-        .navigationTitle("Drone / Burst")
-        .navigationBarTitleDisplayMode(.inline)
         .safeAreaInset(edge: .bottom) {
             Button {
                 startScan = true
