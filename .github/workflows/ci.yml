@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# Cancel an in-progress run when new commits land on the same ref.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Build & Test
+    runs-on: macos-15
+    env:
+      # The simulator to test on. OS=latest uses whatever iOS runtime ships with
+      # the selected Xcode; the app's floor is iOS 26.0. Bump the device name here
+      # if the runner image changes its default simulators.
+      DESTINATION: "platform=iOS Simulator,name=iPhone 17 Pro,OS=latest"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        # CleanShots needs the iOS 26 SDK (Foundation Models, MapKit geocoding).
+        # latest-stable on a macOS 15 runner is Xcode 26.x; pin to an explicit
+        # version (e.g. '26.5') if you need byte-for-byte reproducibility.
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Show toolchain & available simulators
+        run: |
+          xcodebuild -version
+          echo "--- available iPhone simulators ---"
+          xcrun simctl list devices available | grep -i iphone || true
+
+      - name: Install xcbeautify
+        run: brew install xcbeautify
+
+      - name: Build & test
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -project CleanShots.xcodeproj \
+            -scheme CleanShots \
+            -destination "$DESTINATION" \
+            -parallel-testing-enabled NO \
+            -resultBundlePath TestResults.xcresult \
+            CODE_SIGNING_ALLOWED=NO \
+            | xcbeautify --renderer github-actions
+
+      - name: Upload test results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: TestResults
+          path: TestResults.xcresult
+          retention-days: 7
+          if-no-files-found: ignore
