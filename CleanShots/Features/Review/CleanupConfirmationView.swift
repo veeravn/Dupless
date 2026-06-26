@@ -18,6 +18,7 @@ struct CleanupConfirmationView: View {
                 .symbolRenderingMode(.hierarchical)
                 .foregroundStyle(.red)
                 .padding(.top, 8)
+                .accessibilityHidden(true)
 
             Text("Move \(count) photo\(count == 1 ? "" : "s") to Recently Deleted?")
                 .font(.title3.bold())
@@ -45,6 +46,7 @@ struct CleanupConfirmationView: View {
                     Group {
                         if isWorking {
                             ProgressView()
+                                .accessibilityLabel("Moving photos to Recently Deleted")
                         } else {
                             Text("Move to Recently Deleted")
                         }
