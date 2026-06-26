@@ -87,15 +87,15 @@ First release of CleanShots:
 
 | Field | Value | Status |
 |---|---|---|
-| Privacy Policy URL | hosted copy of `docs/privacy-policy.html` | **(your action)** — see note |
-| Support URL | a page or mailto with contact info | **(your action)** |
-| Marketing URL (optional) | — | optional |
+| Privacy Policy URL | `https://veeravn.github.io/cleanshots-site/privacy-policy.html` | ✓ live |
+| Support URL | `https://veeravn.github.io/cleanshots-site/` | ✓ live |
+| Marketing URL (optional) | `https://veeravn.github.io/cleanshots-site/` | optional |
 
-> **Privacy Policy hosting:** App Store Connect requires a public **URL**, not a
-> file. The simplest path: enable **GitHub Pages** on the repo (Settings →
-> Pages → deploy from `main` / `/docs`), which publishes `privacy-policy.html`
-> at `https://veeravn.github.io/CleanShots/privacy-policy.html`. A Support URL
-> can be the repo's README or a simple page with your contact email.
+> **Hosting:** these pages are served by GitHub Pages from the dedicated public
+> repo **`veeravn/cleanshots-site`** (this app repo is private, and Pages on a
+> private repo needs a paid plan). The site's source mirrors `docs/`
+> (`index.html` + `privacy-policy.html`); update the public repo if those pages
+> change. Both URLs are verified returning HTTP 200.
 
 ---
 
@@ -170,9 +170,9 @@ inside MapKit) and no custom/proprietary cryptography. You can declare it
 - [ ] **App icon** — 1024×1024 present in the asset catalog ✓ (confirm it has no alpha/transparency)
 - [ ] **iPhone 6.9" screenshots** — 7 captured in `marketing/screenshots/iphone-6.9/` ✓
 - [ ] **iPad 13" screenshots** — 3 captured in `marketing/screenshots/ipad-13/` ✓
-- [ ] ⚠️ **Re-capture `iphone-6.9/1-onboarding.png`** — it shows the old title "Find duplicates, privately"; the app now reads "Find duplicates". The current screenshot is stale.
-- [ ] Privacy Policy URL is live (GitHub Pages) **(your action)**
-- [ ] Support URL set **(your action)**
+- [x] **Onboarding screenshot refreshed** — `iphone-6.9/1-onboarding.png` re-captured with the current "Find duplicates" title.
+- [x] **Privacy Policy URL is live** — `https://veeravn.github.io/cleanshots-site/privacy-policy.html` (GitHub Pages, public `cleanshots-site` repo)
+- [x] **Support URL is live** — `https://veeravn.github.io/cleanshots-site/`
 - [ ] Listing copy, keywords, categories, age rating entered **(your action)**
 - [ ] App Privacy answered ("Data Not Collected" recommended) **(your action)**
 - [ ] Archive in Xcode (Release) and upload via Organizer **(your action)**
