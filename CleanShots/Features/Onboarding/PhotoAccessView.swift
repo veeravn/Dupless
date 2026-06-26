@@ -12,6 +12,7 @@ struct PhotoAccessView: View {
             Image(systemName: "photo.stack")
                 .font(.system(size: 64))
                 .foregroundStyle(.tint)
+                .accessibilityHidden(true)
 
             VStack(spacing: 12) {
                 Text("Find duplicates")

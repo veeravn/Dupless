@@ -135,6 +135,8 @@ struct PhotoInspectorView: View {
                                 .id(id)
                                 .onTapGesture { withAnimation { currentID = id } }
                                 .accessibilityLabel("Photo \((identifiers.firstIndex(of: id) ?? 0) + 1)")
+                                .accessibilityAddTraits(.isButton)
+                                .accessibilityAddTraits(id == currentID ? [.isSelected] : [])
                         }
                     }
                 }

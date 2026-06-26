@@ -148,6 +148,15 @@ private struct StageRow: View {
                 .foregroundStyle(isComplete ? Color.green : (isActive ? Color.accentColor : Color.secondary))
         }
         .font(.subheadline)
+        // The icon's color/shape is the only cue to a stage's status; surface it
+        // to VoiceOver as a spoken value so progress is followable non-visually.
+        .accessibilityValue(stateDescription)
+    }
+
+    private var stateDescription: String {
+        if isComplete { return "completed" }
+        if isActive { return "in progress" }
+        return "pending"
     }
 
     private var order: Int { ScanStage.allCases.firstIndex(of: stage) ?? 0 }

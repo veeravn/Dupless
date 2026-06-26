@@ -232,6 +232,8 @@ private struct PhotoChoiceCell: View {
             .accessibilityLabel(accessibilityLabel)
             .accessibilityAddTraits(.isButton)
             .accessibilityAddTraits(isMarkedForRemoval ? [.isSelected] : [])
+            .accessibilityHint(isMarkedForRemoval ? "Double tap to keep this photo"
+                                                   : "Double tap to mark this photo for removal")
     }
 
     private var accessibilityLabel: String {
@@ -264,6 +266,9 @@ private struct BadgeStrip: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .frame(height: 14)
+        // The tile's own label already enumerates these badges; hiding the strip
+        // avoids VoiceOver announcing every badge a second time.
+        .accessibilityHidden(true)
     }
 }
 
