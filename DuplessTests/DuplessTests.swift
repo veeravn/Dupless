@@ -1,13 +1,13 @@
 //
-//  CleanShotsTests.swift
-//  CleanShotsTests
+//  DuplessTests.swift
+//  DuplessTests
 //
 //  Created by Veerav Naidu on 6/16/26.
 //
 
 import Testing
 
-struct CleanShotsTests {
+struct DuplessTests {
 
     @Test func example() async throws {
         // Write your test here and use APIs like `#expect(...)` to check expected conditions.

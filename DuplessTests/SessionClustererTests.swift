@@ -1,5 +1,5 @@
 import XCTest
-@testable import CleanShots
+@testable import Dupless
 
 final class SessionClustererTests: XCTestCase {
     private let base = Date(timeIntervalSince1970: 1_000_000)

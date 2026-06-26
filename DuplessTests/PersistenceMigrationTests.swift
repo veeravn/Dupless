@@ -1,6 +1,6 @@
 import XCTest
 import SwiftData
-@testable import CleanShots
+@testable import Dupless
 
 @MainActor
 final class PersistenceMigrationTests: XCTestCase {
@@ -23,10 +23,10 @@ final class PersistenceMigrationTests: XCTestCase {
     }
 
     func testMigrationPlanDeclaresV1() {
-        XCTAssertEqual(CleanShotsMigrationPlan.schemas.count, 1)
-        XCTAssertTrue(CleanShotsMigrationPlan.schemas.first == SchemaV1.self)
+        XCTAssertEqual(DuplessMigrationPlan.schemas.count, 1)
+        XCTAssertTrue(DuplessMigrationPlan.schemas.first == SchemaV1.self)
         // No stages yet — V1 is the baseline.
-        XCTAssertTrue(CleanShotsMigrationPlan.stages.isEmpty)
+        XCTAssertTrue(DuplessMigrationPlan.stages.isEmpty)
     }
 
     // MARK: - The actual guarantee: reopening the store keeps data
@@ -43,7 +43,7 @@ final class PersistenceMigrationTests: XCTestCase {
 
         // Write through a versioned container.
         do {
-            let container = try ModelContainer(for: schema, migrationPlan: CleanShotsMigrationPlan.self, configurations: [config])
+            let container = try ModelContainer(for: schema, migrationPlan: DuplessMigrationPlan.self, configurations: [config])
             let context = ModelContext(container)
             context.insert(DuplicateGroupRecord(memberIdentifiers: ["a", "b"], confidence: 0.91, recommendedKeeperIdentifier: "a"))
             context.insert(SessionClusterRecord(assetIdentifiers: ["x", "y"], sessionType: .burst, startDate: .now, endDate: .now, recommendedBestShotIds: ["x"]))
@@ -51,7 +51,7 @@ final class PersistenceMigrationTests: XCTestCase {
         }
 
         // Reopen the same on-disk store — data must survive (not be wiped).
-        let reopened = try ModelContainer(for: schema, migrationPlan: CleanShotsMigrationPlan.self, configurations: [config])
+        let reopened = try ModelContainer(for: schema, migrationPlan: DuplessMigrationPlan.self, configurations: [config])
         let context = ModelContext(reopened)
         let groups = try context.fetch(FetchDescriptor<DuplicateGroupRecord>())
         let sessions = try context.fetch(FetchDescriptor<SessionClusterRecord>())

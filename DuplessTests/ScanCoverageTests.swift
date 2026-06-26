@@ -1,5 +1,5 @@
 import XCTest
-@testable import CleanShots
+@testable import Dupless
 
 final class ScanCoverageTests: XCTestCase {
     private func analysis(_ id: String) -> CachedAnalysis {

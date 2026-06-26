@@ -17,7 +17,7 @@
                BlueprintIdentifier = "2771E1532FE23D4B0065D9D5"
                BuildableName = "Dupless.app"
                BlueprintName = "Dupless"
-               ReferencedContainer = "container:CleanShots.xcodeproj">
+               ReferencedContainer = "container:Dupless.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -35,7 +35,7 @@
                BlueprintIdentifier = "2771E15F2FE23D4C0065D9D5"
                BuildableName = "DuplessTests.xctest"
                BlueprintName = "DuplessTests"
-               ReferencedContainer = "container:CleanShots.xcodeproj">
+               ReferencedContainer = "container:Dupless.xcodeproj">
             </BuildableReference>
          </TestableReference>
       </Testables>
@@ -57,7 +57,7 @@
             BlueprintIdentifier = "2771E1532FE23D4B0065D9D5"
             BuildableName = "Dupless.app"
             BlueprintName = "Dupless"
-            ReferencedContainer = "container:CleanShots.xcodeproj">
+            ReferencedContainer = "container:Dupless.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -74,7 +74,7 @@
             BlueprintIdentifier = "2771E1532FE23D4B0065D9D5"
             BuildableName = "Dupless.app"
             BlueprintName = "Dupless"
-            ReferencedContainer = "container:CleanShots.xcodeproj">
+            ReferencedContainer = "container:Dupless.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

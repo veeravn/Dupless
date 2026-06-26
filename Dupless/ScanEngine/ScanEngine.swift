@@ -3,12 +3,12 @@ import Photos
 import SwiftData
 import SwiftUI
 
-private let scanLog = Logger(subsystem: "CleanShots", category: "scan")
+private let scanLog = Logger(subsystem: "Dupless", category: "scan")
 /// DEBUG-only log of content-classification decisions during a content-scoped
 /// scan, for tuning which Vision labels a subject should match. Enable by setting
 /// the `CLEANSHOTS_CONTENT_LOG` environment variable in the Run scheme. View with
-/// subsystem "CleanShots", category "content". Logs ids/labels only.
-private let contentLog = Logger(subsystem: "CleanShots", category: "content")
+/// subsystem "Dupless", category "content". Logs ids/labels only.
+private let contentLog = Logger(subsystem: "Dupless", category: "content")
 
 /// Orchestrates a scan: fetch scope → analyze off-main (caching each result for
 /// resume) → group → persist. Observable so ScanProgressView can react.

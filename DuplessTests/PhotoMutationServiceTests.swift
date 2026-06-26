@@ -1,5 +1,5 @@
 import XCTest
-@testable import CleanShots
+@testable import Dupless
 
 final class PhotoMutationServiceTests: XCTestCase {
     /// Deleting nothing is a no-op success — guards the cleanup flow against

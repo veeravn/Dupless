@@ -1,5 +1,5 @@
 import XCTest
-@testable import CleanShots
+@testable import Dupless
 
 /// Records the default mode the coordinator passes through, and returns a canned result.
 private actor RecordingParser: ScanRequestParsing {

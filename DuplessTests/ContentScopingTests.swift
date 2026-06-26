@@ -1,5 +1,5 @@
 import XCTest
-@testable import CleanShots
+@testable import Dupless
 
 final class ContentScopingTests: XCTestCase {
     private let classifier = PhotoContentClassifier()

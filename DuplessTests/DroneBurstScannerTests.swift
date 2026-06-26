@@ -1,5 +1,5 @@
 import XCTest
-@testable import CleanShots
+@testable import Dupless
 
 /// Records which ids altitude was requested for, and returns a canned map.
 private final class StubAltitudeProvider: AltitudeProviding, @unchecked Sendable {

@@ -10,9 +10,9 @@ struct DuplicateGrouper {
     /// DEBUG-only log of per-pair grouping decisions, for tuning thresholds from
     /// real photos. Off by default; enable by setting the `CLEANSHOTS_GROUP_LOG`
     /// environment variable in the Run scheme. View in Xcode/Console with
-    /// subsystem "CleanShots", category "grouping". Logs ids/distances only —
+    /// subsystem "Dupless", category "grouping". Logs ids/distances only —
     /// never image content.
-    private static let log = Logger(subsystem: "CleanShots", category: "grouping")
+    private static let log = Logger(subsystem: "Dupless", category: "grouping")
     private static let pairLoggingEnabled =
         ProcessInfo.processInfo.environment["CLEANSHOTS_GROUP_LOG"] != nil
 

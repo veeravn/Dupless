@@ -1,5 +1,5 @@
 import XCTest
-@testable import CleanShots
+@testable import Dupless
 
 final class ScanParserTests: XCTestCase {
     private var cal: Calendar = {

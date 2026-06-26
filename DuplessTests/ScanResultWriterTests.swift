@@ -1,6 +1,6 @@
 import XCTest
 import SwiftData
-@testable import CleanShots
+@testable import Dupless
 
 @MainActor
 final class ScanResultWriterTests: XCTestCase {

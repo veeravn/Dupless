@@ -2,7 +2,7 @@ import AppIntents
 
 /// Registers Siri phrases / Shortcuts actions for the app's intents. Limited to
 /// the most common, safe entry points (no direct deletion via voice).
-struct CleanShotsShortcuts: AppShortcutsProvider {
+struct DuplessShortcuts: AppShortcutsProvider {
     static var appShortcuts: [AppShortcut] {
         AppShortcut(
             intent: FindDuplicatePhotosIntent(),

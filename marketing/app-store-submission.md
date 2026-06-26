@@ -12,7 +12,7 @@ make.
 | Field | Value |
 |---|---|
 | App name | `Dupless` |
-| Bundle ID | `com.vnaidu.CleanShots` |
+| Bundle ID | `com.vnaidu.Dupless` |
 | Version / Build | `1.0` / `1` |
 | Primary category | **Photo & Video** |
 | Secondary category | **Utilities** |

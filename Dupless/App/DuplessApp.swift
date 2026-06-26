@@ -2,7 +2,7 @@ import SwiftUI
 import SwiftData
 
 @main
-struct CleanShotsApp: App {
+struct DuplessApp: App {
     @State private var authorization = PhotoAuthorizationManager()
     @State private var scanEngine = ScanEngine()
     @State private var router = IntentRouter.shared

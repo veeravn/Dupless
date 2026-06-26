@@ -1,5 +1,5 @@
 import UIKit
-@testable import CleanShots
+@testable import Dupless
 
 /// Image helpers for analysis tests. Patterns (not solid colors) are used where
 /// a perceptual hash needs gradients to be meaningful.

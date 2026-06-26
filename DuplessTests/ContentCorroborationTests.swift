@@ -1,5 +1,5 @@
 import XCTest
-@testable import CleanShots
+@testable import Dupless
 
 /// The model tends to copy an example from its own guide (e.g. 'dog') into
 /// `contentQuery` when the request names a place but no visual subject. That

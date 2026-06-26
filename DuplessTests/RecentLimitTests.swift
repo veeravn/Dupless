@@ -1,5 +1,5 @@
 import XCTest
-@testable import CleanShots
+@testable import Dupless
 
 /// An undated scan caps at the default recent window, but a named place widens
 /// it: location is a post-fetch filter, so the candidate set must reach further

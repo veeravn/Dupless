@@ -1,5 +1,5 @@
 import XCTest
-@testable import CleanShots
+@testable import Dupless
 
 /// The template parser is the *real* parser on devices without Apple
 /// Intelligence, so it must also extract content themes and place names — not

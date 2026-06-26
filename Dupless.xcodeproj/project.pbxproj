@@ -30,7 +30,7 @@
 		2715495A2FEED8D70078C02F /* NaturalLanguageScanCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 271548E92FEED8D70078C02F /* NaturalLanguageScanCoordinator.swift */; };
 		2715495B2FEED8D70078C02F /* PhotoAccessView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 271549152FEED8D70078C02F /* PhotoAccessView.swift */; };
 		2715495C2FEED8D70078C02F /* DroneBurstScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 271548FA2FEED8D70078C02F /* DroneBurstScanner.swift */; };
-		2715495D2FEED8D70078C02F /* CleanShotsApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2715490E2FEED8D70078C02F /* CleanShotsApp.swift */; };
+		2715495D2FEED8D70078C02F /* DuplessApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2715490E2FEED8D70078C02F /* DuplessApp.swift */; };
 		2715495E2FEED8D70078C02F /* VisionFeaturePrintService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2715490B2FEED8D70078C02F /* VisionFeaturePrintService.swift */; };
 		2715495F2FEED8D70078C02F /* GroupRankingResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 271548F02FEED8D70078C02F /* GroupRankingResolver.swift */; };
 		271549602FEED8D70078C02F /* ScanProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 271549212FEED8D70078C02F /* ScanProgressView.swift */; };
@@ -82,7 +82,7 @@
 		2715498E2FEED8D70078C02F /* FoundationModelService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 271548F42FEED8D70078C02F /* FoundationModelService.swift */; };
 		2715498F2FEED8D70078C02F /* BestShotRanker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 271549362FEED8D70078C02F /* BestShotRanker.swift */; };
 		271549902FEED8D70078C02F /* ScanRequestParsing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 271548EA2FEED8D70078C02F /* ScanRequestParsing.swift */; };
-		271549912FEED8D70078C02F /* CleanShotsShortcuts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 271549262FEED8D70078C02F /* CleanShotsShortcuts.swift */; };
+		271549912FEED8D70078C02F /* DuplessShortcuts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 271549262FEED8D70078C02F /* DuplessShortcuts.swift */; };
 		271549922FEED8D70078C02F /* ScanCoverage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 271549072FEED8D70078C02F /* ScanCoverage.swift */; };
 		271549932FEED8D70078C02F /* PhotoAlbumEntity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2715492A2FEED8D70078C02F /* PhotoAlbumEntity.swift */; };
 		271549942FEED8D70078C02F /* PhotoInspectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2715491D2FEED8D70078C02F /* PhotoInspectorView.swift */; };
@@ -115,7 +115,7 @@
 		271549AF2FEED8D70078C02F /* NaturalLanguageScanCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 271548E92FEED8D70078C02F /* NaturalLanguageScanCoordinator.swift */; };
 		271549B02FEED8D70078C02F /* PhotoAccessView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 271549152FEED8D70078C02F /* PhotoAccessView.swift */; };
 		271549B12FEED8D70078C02F /* DroneBurstScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 271548FA2FEED8D70078C02F /* DroneBurstScanner.swift */; };
-		271549B22FEED8D70078C02F /* CleanShotsApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2715490E2FEED8D70078C02F /* CleanShotsApp.swift */; };
+		271549B22FEED8D70078C02F /* DuplessApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2715490E2FEED8D70078C02F /* DuplessApp.swift */; };
 		271549B32FEED8D70078C02F /* VisionFeaturePrintService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2715490B2FEED8D70078C02F /* VisionFeaturePrintService.swift */; };
 		271549B42FEED8D70078C02F /* GroupRankingResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 271548F02FEED8D70078C02F /* GroupRankingResolver.swift */; };
 		271549B52FEED8D70078C02F /* ScanProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 271549212FEED8D70078C02F /* ScanProgressView.swift */; };
@@ -167,7 +167,7 @@
 		271549E32FEED8D70078C02F /* FoundationModelService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 271548F42FEED8D70078C02F /* FoundationModelService.swift */; };
 		271549E42FEED8D70078C02F /* BestShotRanker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 271549362FEED8D70078C02F /* BestShotRanker.swift */; };
 		271549E52FEED8D70078C02F /* ScanRequestParsing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 271548EA2FEED8D70078C02F /* ScanRequestParsing.swift */; };
-		271549E62FEED8D70078C02F /* CleanShotsShortcuts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 271549262FEED8D70078C02F /* CleanShotsShortcuts.swift */; };
+		271549E62FEED8D70078C02F /* DuplessShortcuts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 271549262FEED8D70078C02F /* DuplessShortcuts.swift */; };
 		271549E72FEED8D70078C02F /* ScanCoverage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 271549072FEED8D70078C02F /* ScanCoverage.swift */; };
 		271549E82FEED8D70078C02F /* PhotoAlbumEntity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2715492A2FEED8D70078C02F /* PhotoAlbumEntity.swift */; };
 		271549E92FEED8D70078C02F /* PhotoInspectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2715491D2FEED8D70078C02F /* PhotoInspectorView.swift */; };
@@ -212,7 +212,7 @@
 		27154A3D2FEEE1A10078C02F /* ContentCorroborationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 271549F32FEEE1A10078C02F /* ContentCorroborationTests.swift */; };
 		27154A3E2FEEE1A10078C02F /* ResumePlannerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27154A0B2FEEE1A10078C02F /* ResumePlannerTests.swift */; };
 		27154A3F2FEEE1A10078C02F /* FallbackScopingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 271549FD2FEEE1A10078C02F /* FallbackScopingTests.swift */; };
-		27154A402FEEE1A10078C02F /* CleanShotsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 271549F12FEEE1A10078C02F /* CleanShotsTests.swift */; };
+		27154A402FEEE1A10078C02F /* DuplessTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 271549F12FEEE1A10078C02F /* DuplessTests.swift */; };
 		27154A412FEEE1A10078C02F /* UnionFindTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27154A172FEEE1A10078C02F /* UnionFindTests.swift */; };
 		27154A422FEEE1A10078C02F /* PhotoMetadataTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27154A072FEEE1A10078C02F /* PhotoMetadataTests.swift */; };
 		27154A432FEEE1A10078C02F /* PhotoAltitudeReaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27154A062FEEE1A10078C02F /* PhotoAltitudeReaderTests.swift */; };
@@ -225,7 +225,7 @@
 			containerPortal = 000000000000000000000000 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = 2771E1532FE23D4B0065D9D5;
-			remoteInfo = CleanShots;
+			remoteInfo = Dupless;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -271,7 +271,7 @@
 		2715490A2FEED8D70078C02F /* ThermalPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThermalPolicy.swift; sourceTree = "<group>"; };
 		2715490B2FEED8D70078C02F /* VisionFeaturePrintService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisionFeaturePrintService.swift; sourceTree = "<group>"; };
 		2715490D2FEED8D70078C02F /* AppRouting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRouting.swift; sourceTree = "<group>"; };
-		2715490E2FEED8D70078C02F /* CleanShotsApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanShotsApp.swift; sourceTree = "<group>"; };
+		2715490E2FEED8D70078C02F /* DuplessApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuplessApp.swift; sourceTree = "<group>"; };
 		2715490F2FEED8D70078C02F /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		271549102FEED8D70078C02F /* SharedStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedStore.swift; sourceTree = "<group>"; };
 		271549122FEED8D70078C02F /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
@@ -288,7 +288,7 @@
 		271549212FEED8D70078C02F /* ScanProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanProgressView.swift; sourceTree = "<group>"; };
 		271549222FEED8D70078C02F /* ScanSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanSetupView.swift; sourceTree = "<group>"; };
 		271549252FEED8D70078C02F /* AlbumCreationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlbumCreationService.swift; sourceTree = "<group>"; };
-		271549262FEED8D70078C02F /* CleanShotsShortcuts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanShotsShortcuts.swift; sourceTree = "<group>"; };
+		271549262FEED8D70078C02F /* DuplessShortcuts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuplessShortcuts.swift; sourceTree = "<group>"; };
 		271549272FEED8D70078C02F /* CleanupIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupIntents.swift; sourceTree = "<group>"; };
 		271549282FEED8D70078C02F /* CleanupSummary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupSummary.swift; sourceTree = "<group>"; };
 		271549292FEED8D70078C02F /* DedupeMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DedupeMode.swift; sourceTree = "<group>"; };
@@ -318,7 +318,7 @@
 		271549EE2FEEE1A10078C02F /* BestShotRankerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BestShotRankerTests.swift; sourceTree = "<group>"; };
 		271549EF2FEEE1A10078C02F /* BlockingKeyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlockingKeyTests.swift; sourceTree = "<group>"; };
 		271549F02FEEE1A10078C02F /* CachedAnalysisTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CachedAnalysisTests.swift; sourceTree = "<group>"; };
-		271549F12FEEE1A10078C02F /* CleanShotsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanShotsTests.swift; sourceTree = "<group>"; };
+		271549F12FEEE1A10078C02F /* DuplessTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuplessTests.swift; sourceTree = "<group>"; };
 		271549F22FEEE1A10078C02F /* CleanupPlanGeneratorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupPlanGeneratorTests.swift; sourceTree = "<group>"; };
 		271549F32FEEE1A10078C02F /* ContentCorroborationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentCorroborationTests.swift; sourceTree = "<group>"; };
 		271549F42FEEE1A10078C02F /* ContentScopingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentScopingTests.swift; sourceTree = "<group>"; };
@@ -475,7 +475,7 @@
 			isa = PBXGroup;
 			children = (
 				2715490D2FEED8D70078C02F /* AppRouting.swift */,
-				2715490E2FEED8D70078C02F /* CleanShotsApp.swift */,
+				2715490E2FEED8D70078C02F /* DuplessApp.swift */,
 				2715490F2FEED8D70078C02F /* RootView.swift */,
 				271549102FEED8D70078C02F /* SharedStore.swift */,
 			);
@@ -546,7 +546,7 @@
 			isa = PBXGroup;
 			children = (
 				271549252FEED8D70078C02F /* AlbumCreationService.swift */,
-				271549262FEED8D70078C02F /* CleanShotsShortcuts.swift */,
+				271549262FEED8D70078C02F /* DuplessShortcuts.swift */,
 				271549272FEED8D70078C02F /* CleanupIntents.swift */,
 				271549282FEED8D70078C02F /* CleanupSummary.swift */,
 				271549292FEED8D70078C02F /* DedupeMode.swift */,
@@ -635,7 +635,7 @@
 				271549EE2FEEE1A10078C02F /* BestShotRankerTests.swift */,
 				271549EF2FEEE1A10078C02F /* BlockingKeyTests.swift */,
 				271549F02FEEE1A10078C02F /* CachedAnalysisTests.swift */,
-				271549F12FEEE1A10078C02F /* CleanShotsTests.swift */,
+				271549F12FEEE1A10078C02F /* DuplessTests.swift */,
 				271549F22FEEE1A10078C02F /* CleanupPlanGeneratorTests.swift */,
 				271549F32FEEE1A10078C02F /* ContentCorroborationTests.swift */,
 				271549F42FEEE1A10078C02F /* ContentScopingTests.swift */,
@@ -692,7 +692,7 @@
 			buildRules = (
 			);
 			name = Dupless;
-			productName = CleanShots;
+			productName = Dupless;
 			productReference = 2771E1542FE23D4B0065D9D5 /* Dupless.app */;
 			productType = "com.apple.product-type.application";
 		};
@@ -710,7 +710,7 @@
 				2771E1622FE23D4C0065D9D5 /* PBXTargetDependency */,
 			);
 			name = DuplessTests;
-			productName = CleanShotsTests;
+			productName = DuplessTests;
 			productReference = 2771E1602FE23D4C0065D9D5 /* DuplessTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
@@ -797,7 +797,7 @@
 				271549AF2FEED8D70078C02F /* NaturalLanguageScanCoordinator.swift in Sources */,
 				271549B02FEED8D70078C02F /* PhotoAccessView.swift in Sources */,
 				271549B12FEED8D70078C02F /* DroneBurstScanner.swift in Sources */,
-				271549B22FEED8D70078C02F /* CleanShotsApp.swift in Sources */,
+				271549B22FEED8D70078C02F /* DuplessApp.swift in Sources */,
 				271549B32FEED8D70078C02F /* VisionFeaturePrintService.swift in Sources */,
 				271549B42FEED8D70078C02F /* GroupRankingResolver.swift in Sources */,
 				271549B52FEED8D70078C02F /* ScanProgressView.swift in Sources */,
@@ -849,7 +849,7 @@
 				271549E32FEED8D70078C02F /* FoundationModelService.swift in Sources */,
 				271549E42FEED8D70078C02F /* BestShotRanker.swift in Sources */,
 				271549E52FEED8D70078C02F /* ScanRequestParsing.swift in Sources */,
-				271549E62FEED8D70078C02F /* CleanShotsShortcuts.swift in Sources */,
+				271549E62FEED8D70078C02F /* DuplessShortcuts.swift in Sources */,
 				271549E72FEED8D70078C02F /* ScanCoverage.swift in Sources */,
 				271549E82FEED8D70078C02F /* PhotoAlbumEntity.swift in Sources */,
 				271549E92FEED8D70078C02F /* PhotoInspectorView.swift in Sources */,
@@ -883,7 +883,7 @@
 				2715495A2FEED8D70078C02F /* NaturalLanguageScanCoordinator.swift in Sources */,
 				2715495B2FEED8D70078C02F /* PhotoAccessView.swift in Sources */,
 				2715495C2FEED8D70078C02F /* DroneBurstScanner.swift in Sources */,
-				2715495D2FEED8D70078C02F /* CleanShotsApp.swift in Sources */,
+				2715495D2FEED8D70078C02F /* DuplessApp.swift in Sources */,
 				2715495E2FEED8D70078C02F /* VisionFeaturePrintService.swift in Sources */,
 				2715495F2FEED8D70078C02F /* GroupRankingResolver.swift in Sources */,
 				271549602FEED8D70078C02F /* ScanProgressView.swift in Sources */,
@@ -953,7 +953,7 @@
 				27154A3D2FEEE1A10078C02F /* ContentCorroborationTests.swift in Sources */,
 				27154A3E2FEEE1A10078C02F /* ResumePlannerTests.swift in Sources */,
 				27154A3F2FEEE1A10078C02F /* FallbackScopingTests.swift in Sources */,
-				27154A402FEEE1A10078C02F /* CleanShotsTests.swift in Sources */,
+				27154A402FEEE1A10078C02F /* DuplessTests.swift in Sources */,
 				27154A412FEEE1A10078C02F /* UnionFindTests.swift in Sources */,
 				27154A422FEEE1A10078C02F /* PhotoMetadataTests.swift in Sources */,
 				27154A432FEEE1A10078C02F /* PhotoAltitudeReaderTests.swift in Sources */,
@@ -979,7 +979,7 @@
 				2715498E2FEED8D70078C02F /* FoundationModelService.swift in Sources */,
 				2715498F2FEED8D70078C02F /* BestShotRanker.swift in Sources */,
 				271549902FEED8D70078C02F /* ScanRequestParsing.swift in Sources */,
-				271549912FEED8D70078C02F /* CleanShotsShortcuts.swift in Sources */,
+				271549912FEED8D70078C02F /* DuplessShortcuts.swift in Sources */,
 				271549922FEED8D70078C02F /* ScanCoverage.swift in Sources */,
 				271549932FEED8D70078C02F /* PhotoAlbumEntity.swift in Sources */,
 				271549942FEED8D70078C02F /* PhotoInspectorView.swift in Sources */,
@@ -1238,7 +1238,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				MACOSX_DEPLOYMENT_TARGET = 26.5;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.vnaidu.CleanShotsTests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.vnaidu.DuplessTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
@@ -1248,7 +1248,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/CleanShots.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/CleanShots";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Dupless.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Dupless";
 				XROS_DEPLOYMENT_TARGET = 27.0;
 			};
 			name = Debug;
@@ -1263,7 +1263,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				MACOSX_DEPLOYMENT_TARGET = 26.5;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.vnaidu.CleanShotsTests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.vnaidu.DuplessTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
@@ -1273,7 +1273,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/CleanShots.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/CleanShots";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Dupless.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Dupless";
 				XROS_DEPLOYMENT_TARGET = 27.0;
 			};
 			name = Release;

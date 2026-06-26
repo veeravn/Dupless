@@ -1,5 +1,5 @@
 import XCTest
-@testable import CleanShots
+@testable import Dupless
 
 /// The model can over-eagerly map vague recency ("recent") onto a concrete range
 /// like last week. `corroboratedDatePhrase` only honors a date when the request

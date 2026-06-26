@@ -1,5 +1,5 @@
 import XCTest
-@testable import CleanShots
+@testable import Dupless
 
 final class DuplicateScanPlannerTests: XCTestCase {
     private func analysis(_ id: String, hash: UInt64, pixels: Int, sharp: Double) -> CachedAnalysis {

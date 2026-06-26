@@ -1,5 +1,5 @@
 import XCTest
-@testable import CleanShots
+@testable import Dupless
 
 final class SceneDiversityScorerTests: XCTestCase {
     private let scorer = SceneDiversityScorer()

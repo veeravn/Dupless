@@ -2,7 +2,7 @@ import XCTest
 import ImageIO
 import UniformTypeIdentifiers
 import UIKit
-@testable import CleanShots
+@testable import Dupless
 
 final class PhotoAltitudeReaderTests: XCTestCase {
     /// Builds a tiny JPEG, optionally embedding a GPS altitude (ref 0 = above sea

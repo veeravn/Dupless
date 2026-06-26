@@ -1,5 +1,5 @@
 import XCTest
-@testable import CleanShots
+@testable import Dupless
 
 final class ProtectionPolicyEngineTests: XCTestCase {
     private let engine = ProtectionPolicyEngine()

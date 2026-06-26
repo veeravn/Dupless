@@ -1,6 +1,6 @@
 import XCTest
 import Foundation
-@testable import CleanShots
+@testable import Dupless
 
 final class ThermalPolicyTests: XCTestCase {
     func testNominalDoesNotThrottle() {

@@ -7,7 +7,7 @@ import SwiftData
 /// To evolve the schema:
 ///   1. Add `SchemaV2: VersionedSchema` with `versionIdentifier = Schema.Version(2, 0, 0)`
 ///      and the updated model set (versioned copies of any changed `@Model`).
-///   2. Append it to `CleanShotsMigrationPlan.schemas`.
+///   2. Append it to `DuplessMigrationPlan.schemas`.
 ///   3. Add a `MigrationStage` from V1 → V2:
 ///        - `.lightweight` for additive / defaultable changes (new optional field,
 ///          new model, renamed-with-default).
@@ -30,7 +30,7 @@ enum SchemaV1: VersionedSchema {
 /// Declares how the on-disk store migrates between schema versions. Only V1 exists
 /// today, so there are no stages yet — but the plan is wired into the container so
 /// the next schema change is a real migration, not a reset.
-enum CleanShotsMigrationPlan: SchemaMigrationPlan {
+enum DuplessMigrationPlan: SchemaMigrationPlan {
     static var schemas: [any VersionedSchema.Type] { [SchemaV1.self] }
     static var stages: [MigrationStage] { [] }
 }

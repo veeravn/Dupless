@@ -1,5 +1,5 @@
 import XCTest
-@testable import CleanShots
+@testable import Dupless
 
 final class ScanScopeTests: XCTestCase {
     func testSignaturesAreDistinctPerScope() {
