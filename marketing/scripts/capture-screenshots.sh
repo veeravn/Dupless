@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Reproducible App Store screenshot capture for CleanShots.
+# Reproducible App Store screenshot capture for Dupless.
 #
 # Builds the app, boots an iOS 27 simulator at an App Store device size,
 # seeds the photo library with near-duplicate images so the dedupe screens
@@ -19,7 +19,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 KIND="${1:-iphone}"
-BUNDLE_ID="com.vnaidu.CleanShots"
+BUNDLE_ID="com.vnaidu.Dupless"
 SEED_DIR="$(mktemp -d)"
 
 case "$KIND" in
@@ -39,9 +39,9 @@ echo "Generating seed images…"
 swift "$ROOT/marketing/scripts/generate-seed-images.swift" "$SEED_DIR"
 
 echo "Building app…"
-xcodebuild build -project "$ROOT/CleanShots.xcodeproj" -scheme CleanShots \
+xcodebuild build -project "$ROOT/Dupless.xcodeproj" -scheme Dupless \
   -destination "platform=iOS Simulator,id=$UDID" -quiet
-APP="$(find ~/Library/Developer/Xcode/DerivedData -path '*Debug-iphonesimulator/CleanShots.app' -maxdepth 8 2>/dev/null | head -1)"
+APP="$(find ~/Library/Developer/Xcode/DerivedData -path '*Debug-iphonesimulator/Dupless.app' -maxdepth 8 2>/dev/null | head -1)"
 
 xcrun simctl boot "$UDID" 2>/dev/null || true
 xcrun simctl addmedia "$UDID" "$SEED_DIR"/*.png

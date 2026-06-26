@@ -14,7 +14,7 @@ func save(_ image: NSImage, _ path: String) {
 }
 let S = 1200
 // Build N "scenes", each with several near-duplicate variants (jitter in
-// position/brightness) so CleanShots finds real similar-photo groups.
+// position/brightness) so Dupless finds real similar-photo groups.
 let scenes: [(NSColor, NSColor)] = [
     (.systemTeal, .systemBlue), (.systemOrange, .systemPink),
     (.systemGreen, .systemYellow), (.systemPurple, .systemIndigo),

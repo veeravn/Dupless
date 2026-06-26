@@ -1,14 +1,14 @@
 <div align="center">
 
-<img src="CleanShots/Assets.xcassets/AppIcon.appiconset/AppIcon.png" width="120" alt="CleanShots app icon" />
+<img src="Dupless/Assets.xcassets/AppIcon.appiconset/AppIcon.png" width="120" alt="Dupless app icon" />
 
-# CleanShots
+# Dupless
 
 **On-device photo deduplication and best-shot cleanup for iOS — private by design.**
 
 </div>
 
-CleanShots scans your photo library entirely **on your device** to find duplicate and
+Dupless scans your photo library entirely **on your device** to find duplicate and
 visually similar photos, ranks the best shot in each group, and helps you safely clean
 up the rest. It understands natural-language requests, explains its recommendations, and
 detects drone/burst sequences — all without a single photo leaving your phone.
@@ -49,13 +49,13 @@ These are non-negotiable and enforced in code:
 
 | Area | Where | Notes |
 |---|---|---|
-| Scan engine | `CleanShots/ScanEngine/`, `CleanShots/Analysis/` | Checkpointed, resumable scans; off-main analysis |
-| Ranking & protection | `CleanShots/Ranking/` | Weighted best-shot score, protection policy |
-| Persistence | `CleanShots/Persistence/` | SwiftData models (`ImageFeatureRecord`, `DuplicateGroupRecord`, `SessionClusterRecord`, …) |
-| Siri / App Intents | `CleanShots/Intents/` | 10 intents + `AppShortcutsProvider` |
-| AI layer | `CleanShots/AI/` | `FoundationModelService` is the **only** file importing `FoundationModels`; everything else is behind protocols with template fallbacks |
-| Drone / burst | `CleanShots/Analysis/SessionClusterer.swift`, `DroneBurstAnalyzer.swift`, `DroneBurstScanner.swift` | Session clustering, redundancy, scene diversity |
-| UI | `CleanShots/Features/` | SwiftUI; path-based navigation driven by app + Siri |
+| Scan engine | `Dupless/ScanEngine/`, `Dupless/Analysis/` | Checkpointed, resumable scans; off-main analysis |
+| Ranking & protection | `Dupless/Ranking/` | Weighted best-shot score, protection policy |
+| Persistence | `Dupless/Persistence/` | SwiftData models (`ImageFeatureRecord`, `DuplicateGroupRecord`, `SessionClusterRecord`, …) |
+| Siri / App Intents | `Dupless/Intents/` | 10 intents + `AppShortcutsProvider` |
+| AI layer | `Dupless/AI/` | `FoundationModelService` is the **only** file importing `FoundationModels`; everything else is behind protocols with template fallbacks |
+| Drone / burst | `Dupless/Analysis/SessionClusterer.swift`, `DroneBurstAnalyzer.swift`, `DroneBurstScanner.swift` | Session clustering, redundancy, scene diversity |
+| UI | `Dupless/Features/` | SwiftUI; path-based navigation driven by app + Siri |
 
 Built across five MVPs: **(1)** core scanning · **(2)** smart ranking · **(3)** Siri/App Intents · **(4)** Foundation Models · **(5)** drone/burst mode.
 
@@ -69,11 +69,11 @@ Built across five MVPs: **(1)** core scanning · **(2)** smart ranking · **(3)*
 
 ```bash
 # Open in Xcode
-open CleanShots.xcodeproj
+open Dupless.xcodeproj
 
 # …or from the command line (use an iOS 27 simulator)
 xcodebuild build \
-  -project CleanShots.xcodeproj -scheme CleanShots \
+  -project Dupless.xcodeproj -scheme Dupless \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro'
 ```
 
@@ -87,7 +87,7 @@ PhotoKit-bound scan glue and SwiftUI views are verified by running the app.
 ```bash
 # Run serially — the iOS 27 simulator can crash the test host under parallel clones
 xcodebuild test \
-  -project CleanShots.xcodeproj -scheme CleanShots \
+  -project Dupless.xcodeproj -scheme Dupless \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
   -parallel-testing-enabled NO
 ```

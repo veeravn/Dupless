@@ -1,4 +1,4 @@
-# CleanShots — App Store Submission Guide
+# Dupless — App Store Submission Guide
 
 Everything needed to fill out App Store Connect for the **1.0** release. Copy
 fields are written to App Store Connect's character limits. Items marked
@@ -11,8 +11,8 @@ make.
 
 | Field | Value |
 |---|---|
-| App name | `CleanShots` |
-| Bundle ID | `com.vnaidu.CleanShots` |
+| App name | `Dupless` |
+| Bundle ID | `com.vnaidu.Dupless` |
 | Version / Build | `1.0` / `1` |
 | Primary category | **Photo & Video** |
 | Secondary category | **Utilities** |
@@ -40,9 +40,9 @@ duplicate,cleaner,storage,similar,burst,declutter,gallery,space,best shot,organi
 
 ### Description
 ```
-CleanShots cleans up your photo library the private way — entirely on your device. It finds duplicates and near-identical shots, picks the best one in each set, and helps you safely remove the rest. No account, no cloud, no uploads.
+Dupless cleans up your photo library the private way — entirely on your device. It finds duplicates and near-identical shots, picks the best one in each set, and helps you safely remove the rest. No account, no cloud, no uploads.
 
-WHY CLEANSHOTS
+WHY DUPLESS
 • Private by design — your photos are analyzed right on your iPhone or iPad and never leave your device.
 • Nothing is deleted automatically. You review every group, and removed photos go to Recently Deleted, so they're always recoverable.
 • Built for the photos you actually take — portrait series, bursts, and drone sequences.
@@ -67,12 +67,12 @@ DRONE & BURST
 SIRI & SHORTCUTS
 • Start scans, review groups, and build albums by voice.
 
-CleanShots has no ads, no trackers, no analytics SDKs, and no account. It just makes your library smaller, on your terms.
+Dupless has no ads, no trackers, no analytics SDKs, and no account. It just makes your library smaller, on your terms.
 ```
 
 ### What's New (1.0)
 ```
-First release of CleanShots:
+First release of Dupless:
 • On-device duplicate and similar-photo detection
 • Best-shot ranking with plain-language explanations
 • Natural-language scans with Apple Intelligence
@@ -141,11 +141,11 @@ comfortable signing.
 ## 5. App Review notes (paste into "Notes" / "Review Information")
 
 ```
-CleanShots is a fully on-device photo-deduplication app. No account or login is required (no demo account needed).
+Dupless is a fully on-device photo-deduplication app. No account or login is required (no demo account needed).
 
 To test: grant Photos access when prompted. The app scans the library for duplicate and similar photos and presents them for review. Nothing is deleted without explicit user action; removals go to Recently Deleted.
 
-"Ask CleanShots" interprets a typed request using on-device Apple Intelligence (Foundation Models); when unavailable it falls back to deterministic keyword parsing, so the feature works on all supported devices.
+"Ask Dupless" interprets a typed request using on-device Apple Intelligence (Foundation Models); when unavailable it falls back to deterministic keyword parsing, so the feature works on all supported devices.
 
 Optional place-name scan scoping is OFF by default. When a user enables it for a scan, the app reverse-geocodes photo coordinates via MapKit (MKReverseGeocodingRequest) to match a named place. Only coordinates are sent to Apple's location service — never photos. This is the only off-device transmission and is disclosed in the privacy policy.
 
