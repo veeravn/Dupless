@@ -126,7 +126,7 @@ private struct ScanConfirmationView: View {
                 Text("Find \(place) photos by location")
                     .font(.subheadline)
             }
-            Text("Looks up where photos were taken using Apple's location service — the only time CleanShots sends data (coordinates, never your photos) off your device. Off keeps everything on-device.")
+            Text("Looks up where photos were taken using Apple's location service — the only time Dupless sends data (coordinates, never your photos) off your device. Off keeps everything on-device.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }

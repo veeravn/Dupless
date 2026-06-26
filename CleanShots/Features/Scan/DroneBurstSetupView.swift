@@ -45,7 +45,7 @@ struct DroneBurstSetupView: View {
             } header: {
                 Text("Scope")
             } footer: {
-                Text("CleanShots groups these photos into shooting sessions by time and location, then finds redundant sequences.")
+                Text("Dupless groups these photos into shooting sessions by time and location, then finds redundant sequences.")
             }
 
             Section {

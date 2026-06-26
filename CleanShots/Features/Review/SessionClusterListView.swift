@@ -168,7 +168,7 @@ struct SessionClusterDetailView: View {
     }
 
     private func createAlbum() async {
-        let name = "CleanShots Picks"
+        let name = "Dupless Picks"
         let result = await AlbumCreationService().createAlbum(named: name, assetIdentifiers: cluster.recommendedBestShotIds)
         switch result {
         case .success(let count): albumMessage = "Added \(count) to \"\(name)\"."

@@ -1,14 +1,14 @@
 <div align="center">
 
-<img src="CleanShots/Assets.xcassets/AppIcon.appiconset/AppIcon.png" width="120" alt="CleanShots app icon" />
+<img src="CleanShots/Assets.xcassets/AppIcon.appiconset/AppIcon.png" width="120" alt="Dupless app icon" />
 
-# CleanShots
+# Dupless
 
 **On-device photo deduplication and best-shot cleanup for iOS — private by design.**
 
 </div>
 
-CleanShots scans your photo library entirely **on your device** to find duplicate and
+Dupless scans your photo library entirely **on your device** to find duplicate and
 visually similar photos, ranks the best shot in each group, and helps you safely clean
 up the rest. It understands natural-language requests, explains its recommendations, and
 detects drone/burst sequences — all without a single photo leaving your phone.

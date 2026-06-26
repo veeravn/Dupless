@@ -19,7 +19,7 @@ struct PhotoAccessView: View {
                     .font(.title.bold())
                     .multilineTextAlignment(.center)
 
-                Text("CleanShots analyzes your photos right on this device to find duplicates and similar shots. Your photos are never uploaded.")
+                Text("Dupless analyzes your photos right on this device to find duplicates and similar shots. Your photos are never uploaded.")
                     .font(.body)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)

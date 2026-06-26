@@ -17,7 +17,7 @@ struct ShowCleanupSummaryIntent: AppIntent {
 /// confirmation first (it suggests more removals).
 struct ChangeCleanupModeIntent: AppIntent {
     static let title: LocalizedStringResource = "Change Cleanup Mode"
-    static let description = IntentDescription("Set how aggressively CleanShots suggests removals.")
+    static let description = IntentDescription("Set how aggressively Dupless suggests removals.")
 
     @Parameter(title: "Mode") var mode: DedupeModeAppEnum
 

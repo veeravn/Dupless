@@ -51,7 +51,7 @@ struct HomeView: View {
                     }
                 }
 
-                Section("Ask CleanShots") {
+                Section("Ask Dupless") {
                     NaturalLanguageScanBar()
                 }
 
@@ -76,7 +76,7 @@ struct HomeView: View {
                     LabeledContent("Estimated duplicates", value: duplicatesText)
                 }
             }
-            .navigationTitle("CleanShots")
+            .navigationTitle("Dupless")
             .navigationDestination(for: AppRoute.self, destination: destination)
         }
     }
@@ -90,7 +90,7 @@ struct HomeView: View {
                     Section { LimitedAccessBanner() }
                 }
 
-                Section("Ask CleanShots") {
+                Section("Ask Dupless") {
                     NaturalLanguageScanBar()
                 }
 
@@ -115,7 +115,7 @@ struct HomeView: View {
                     LabeledContent("Estimated duplicates", value: duplicatesText)
                 }
             }
-            .navigationTitle("CleanShots")
+            .navigationTitle("Dupless")
         } detail: {
             NavigationStack(path: $path) {
                 WelcomeDetail()
@@ -185,11 +185,11 @@ enum SidebarItem: Hashable {
 private struct WelcomeDetail: View {
     var body: some View {
         ContentUnavailableView {
-            Label("CleanShots", systemImage: "sparkles")
+            Label("Dupless", systemImage: "sparkles")
         } description: {
             Text("Choose Scan, Drone / Burst, or Review to begin. Everything happens on your device.")
         }
-        .navigationTitle("CleanShots")
+        .navigationTitle("Dupless")
         .navigationBarTitleDisplayMode(.inline)
     }
 }
@@ -230,7 +230,7 @@ private struct LimitedAccessBanner: View {
         VStack(alignment: .leading, spacing: 8) {
             Label("Limited Photos Access", systemImage: "exclamationmark.triangle")
                 .font(.headline)
-            Text("CleanShots can only see the photos you've selected. Add more so it can find duplicates across your library.")
+            Text("Dupless can only see the photos you've selected. Add more so it can find duplicates across your library.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
             Button("Add More Photos") { presentPicker() }

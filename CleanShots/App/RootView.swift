@@ -57,7 +57,7 @@ private struct LaunchView: View {
                 .font(.system(size: 64, weight: .semibold))
                 .foregroundStyle(.tint)
                 .accessibilityHidden(true)
-            Text("CleanShots")
+            Text("Dupless")
                 .font(.largeTitle.bold())
             Spacer()
             ProgressView(value: progress)
@@ -67,7 +67,7 @@ private struct LaunchView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("CleanShots, loading")
+        .accessibilityLabel("Dupless, loading")
         .task {
             withAnimation(.easeInOut(duration: 0.85)) { progress = 1 }
         }
