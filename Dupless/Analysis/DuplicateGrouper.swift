@@ -51,10 +51,16 @@ struct DuplicateGrouper {
                     let d = distance(a, b)
                     if withinPrefilter, d <= sensitivity.featureDistanceThreshold {
                         unionFind.union(indices[i], indices[j])
-                    } else if session, d <= sensitivity.sessionRelaxedThreshold {
+                    } else if session, d <= sensitivity.sessionRelaxedThreshold,
+                              similarColor(a, b) {
                         // Same shooting session: a pose change against the same
                         // backdrop still groups, so the series collapses to one
-                        // keeper instead of staying ungrouped.
+                        // keeper instead of staying ungrouped. The color gate keeps
+                        // this relaxed merge from swallowing a same-backdrop shot
+                        // whose subject changed color (e.g. an outfit change) — the
+                        // grayscale hash and feature print under-weight that, so the
+                        // coarse color histogram catches it. Gating only this path
+                        // never weakens the strict true-duplicate match above.
                         unionFind.union(indices[i], indices[j])
                     }
                 }
@@ -96,13 +102,14 @@ struct DuplicateGrouper {
         guard session || d <= 1.0 else { return }
         let gap = a.captureDate.flatMap { ca in b.captureDate.map { abs(ca.timeIntervalSince($0)) } } ?? -1
         let composition = compatibleComposition(a, b)
+        let color = colorSimilarity(a, b) ?? -1
         let grouped = composition
             && ((withinPrefilter && d <= sensitivity.featureDistanceThreshold)
-                || (session && d <= sensitivity.sessionRelaxedThreshold))
+                || (session && d <= sensitivity.sessionRelaxedThreshold && similarColor(a, b)))
         let line = String(
-            format: "%@ × %@  hamming=%d  feat=%.3f  gapSec=%.0f  faces=%d/%d  session=%@  prefilter=%@  → %@",
+            format: "%@ × %@  hamming=%d  feat=%.3f  gapSec=%.0f  faces=%d/%d  color=%.2f  session=%@  prefilter=%@  → %@",
             String(a.id.prefix(6)), String(b.id.prefix(6)), hamming, d, gap,
-            a.faceCount, b.faceCount,
+            a.faceCount, b.faceCount, color,
             session ? "Y" : "N", withinPrefilter ? "Y" : "N", grouped ? "GROUP" : "skip")
         Self.log.debug("\(line, privacy: .public)")
     }
@@ -138,6 +145,48 @@ struct DuplicateGrouper {
 
     /// Max difference in detected face count for two photos to still be groupable.
     static let maxFaceCountDelta = 1
+
+    /// Whether two photos are close enough in overall color for the relaxed
+    /// same-session merge. Returns true when either lacks a color signature (older
+    /// cache, or a thumbnail that couldn't be rasterized) so the fix never
+    /// regresses photos analyzed before it shipped — they fall back to the visual
+    /// signals exactly as before. Otherwise requires histogram-intersection
+    /// similarity at or above `colorSimilarityFloor`.
+    nonisolated func similarColor(_ a: AnalyzedPhoto, _ b: AnalyzedPhoto) -> Bool {
+        guard let sim = colorSimilarity(a, b) else { return true }
+        return sim >= Self.colorSimilarityFloor
+    }
+
+    /// Histogram-intersection similarity of two color signatures, in 0...1 (1 =
+    /// identical color distribution). Each signature is 64 bins normalized to a
+    /// 0...255 byte; intersection sums the per-bin minimum and divides by the
+    /// smaller signature's total, so it's robust to the two not summing to exactly
+    /// the same value. Returns nil when either signature is missing or malformed.
+    nonisolated func colorSimilarity(_ a: AnalyzedPhoto, _ b: AnalyzedPhoto) -> Float? {
+        guard let sa = a.colorSignature, let sb = b.colorSignature,
+              sa.count == sb.count, !sa.isEmpty else { return nil }
+        var intersection = 0
+        var totalA = 0
+        var totalB = 0
+        for i in 0..<sa.count {
+            let va = Int(sa[i])
+            let vb = Int(sb[i])
+            intersection += min(va, vb)
+            totalA += va
+            totalB += vb
+        }
+        let denominator = min(totalA, totalB)
+        guard denominator > 0 else { return nil }
+        return Float(intersection) / Float(denominator)
+    }
+
+    /// Minimum color-histogram similarity (0...1) for two same-session photos to
+    /// still merge on the relaxed path. Conservative by design: high enough to
+    /// split an outfit/subject color change against a shared backdrop, low enough
+    /// that lighting/white-balance drift or a flash/no-flash pair of the *same*
+    /// scene still groups. Surfaced in the DEBUG `CLEANSHOTS_GROUP_LOG` (the
+    /// `color=` field) so it can be tuned against real photos.
+    static let colorSimilarityFloor: Float = 0.6
 
     /// Vision feature-print distance when available, else a normalized Hamming
     /// fallback. Lower = more similar.

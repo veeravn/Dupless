@@ -11,6 +11,14 @@ struct QualityScores: Sendable, Equatable, Codable {
     var contrast: Double
     /// Directional/low-clarity blur estimate. 0 = crisp, 1 = heavy motion blur.
     var motionBlur: Double
+    /// Coarse RGB color histogram (64 bins, one byte each) of the thumbnail. Lets
+    /// the grouper tell apart same-backdrop shots whose *subject* differs — e.g. a
+    /// bust-level portrait in two different outfits, which the grayscale hash and
+    /// the Vision feature print both under-weight. `nil` for records analyzed
+    /// before this field existed (grouping then falls back to the visual signals
+    /// only). Optional so the existing cache stays decodable without a schema
+    /// migration.
+    var colorSignature: Data? = nil
 
     static let unknown = QualityScores(sharpness: 0.5, exposure: 0.5, contrast: 0.5, motionBlur: 0.5)
 }

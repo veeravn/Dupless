@@ -35,6 +35,11 @@ struct AnalyzedPhoto {
     /// compositions apart — e.g. "just the couple" vs "the whole family" shot
     /// against the same party backdrop are different keepsakes, not duplicates.
     let faceCount: Int
+    /// Coarse RGB color histogram (64 bytes) of the thumbnail, or nil for photos
+    /// cached before it was computed. Lets the relaxed same-session path tell apart
+    /// shots that share a backdrop but differ in subject color (e.g. an outfit
+    /// change) — signals the grayscale hash and feature print both miss.
+    let colorSignature: Data?
 
     init(
         id: String,
@@ -45,7 +50,8 @@ struct AnalyzedPhoto {
         captureDate: Date? = nil,
         latitude: Double? = nil,
         longitude: Double? = nil,
-        faceCount: Int = 0
+        faceCount: Int = 0,
+        colorSignature: Data? = nil
     ) {
         self.id = id
         self.pixelCount = pixelCount
@@ -56,6 +62,7 @@ struct AnalyzedPhoto {
         self.latitude = latitude
         self.longitude = longitude
         self.faceCount = faceCount
+        self.colorSignature = colorSignature
     }
 }
 
@@ -107,7 +114,8 @@ struct CachedAnalysis: Sendable, Equatable {
             captureDate: metadata.creationDate,
             latitude: metadata.latitude,
             longitude: metadata.longitude,
-            faceCount: flags.faceCount
+            faceCount: flags.faceCount,
+            colorSignature: quality.colorSignature
         )
     }
 
