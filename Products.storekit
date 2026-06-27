@@ -1,0 +1,63 @@
+{
+  "appPolicies" : {
+    "eula" : "",
+    "policies" : []
+  },
+  "identifier" : "21F4C1A2-0001-4000-A000-000000000004",
+  "nonRenewingSubscriptions" : [],
+  "products" : [
+    {
+      "displayPrice" : "4.99",
+      "familyShareable" : false,
+      "internalID" : "21F4C1A2-0001-4000-A000-000000000002",
+      "localizations" : [
+        {
+          "description" : "Unlock all Dupless Pro features, forever.",
+          "displayName" : "Dupless Pro (Lifetime)",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.vnaidu.Dupless.pro.lifetime",
+      "referenceName" : "Dupless Pro Lifetime",
+      "type" : "NonConsumable"
+    }
+  ],
+  "settings" : {
+    "_failTransactionsEnabled" : false,
+    "_storeKitErrors" : []
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "21F4C1A2-0001-4000-A000-000000000001",
+      "localizations" : [],
+      "name" : "Dupless Pro",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [],
+          "codeOffers" : [],
+          "displayPrice" : "9.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "21F4C1A2-0001-4000-A000-000000000003",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "All Dupless Pro features, billed yearly.",
+              "displayName" : "Dupless Pro (Annual)",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "com.vnaidu.Dupless.pro.annual",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Dupless Pro Annual",
+          "subscriptionGroupID" : "21F4C1A2-0001-4000-A000-000000000001",
+          "type" : "RecurringSubscription"
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 4,
+    "minor" : 0
+  }
+}
