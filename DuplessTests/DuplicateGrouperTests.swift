@@ -89,9 +89,20 @@ final class DuplicateGrouperTests: XCTestCase {
     private let sessionStart = Date(timeIntervalSince1970: 1_000_000)
 
     private func photo(_ id: String, hash: UInt64, date: Date? = nil,
-                       lat: Double? = nil, lon: Double? = nil) -> AnalyzedPhoto {
+                       lat: Double? = nil, lon: Double? = nil, faces: Int = 0,
+                       color: Data? = nil) -> AnalyzedPhoto {
         AnalyzedPhoto(id: id, pixelCount: 1000, blockingKey: "block", hash: hash,
-                      feature: nil, captureDate: date, latitude: lat, longitude: lon)
+                      feature: nil, captureDate: date, latitude: lat, longitude: lon,
+                      faceCount: faces, colorSignature: color)
+    }
+
+    /// A 64-bin color signature with all weight in a single bin — two different
+    /// bins give disjoint histograms (intersection 0), the same bin gives identical
+    /// ones (intersection 1.0).
+    private func colorSig(bin: Int) -> Data {
+        var bytes = [UInt8](repeating: 0, count: 64)
+        bytes[bin] = 255
+        return Data(bytes)
     }
 
     func testSameSessionGroupsDifferentPoses() {
@@ -138,6 +149,41 @@ final class DuplicateGrouperTests: XCTestCase {
         XCTAssertEqual(grouper.group(photos, sensitivity: .conservative).count, 1)
     }
 
+    // MARK: - Composition guard (different group sizes shouldn't merge)
+
+    // TestFlight report: at a party with the same backdrop, "the couple" and
+    // "the whole family" were grouped together. Different group sizes are
+    // distinct keepsakes, not duplicates — even visually similar and same-session.
+    func testDifferentFaceCountsStaySeparateEvenWhenVisuallySimilar() {
+        // Balanced would group these on BOTH the strict and session-relaxed paths
+        // (hamming 20 ≤ prefilter, 0.3125 ≤ thresholds); the composition guard
+        // must override that.
+        let photos = [
+            photo("couple", hash: keeperHash, date: sessionStart, faces: 2),
+            photo("family", hash: poseHash, date: sessionStart.addingTimeInterval(60), faces: 4),
+        ]
+        XCTAssertTrue(grouper.group(photos, sensitivity: .balanced).isEmpty,
+                      "Different group sizes at the same backdrop must not group")
+    }
+
+    func testSameFaceCountStillGroupsAcrossPoses() {
+        // Same two people, different poses in one session → still collapses.
+        let photos = [
+            photo("a", hash: keeperHash, date: sessionStart, faces: 2),
+            photo("b", hash: poseHash, date: sessionStart.addingTimeInterval(60), faces: 2),
+        ]
+        XCTAssertEqual(grouper.group(photos, sensitivity: .conservative).count, 1)
+    }
+
+    func testOneFaceFlickerIsTolerated() {
+        // A ±1 difference (a face momentarily un-detected across a burst) still groups.
+        let photos = [
+            photo("a", hash: keeperHash, date: sessionStart, faces: 3),
+            photo("b", hash: poseHash, date: sessionStart.addingTimeInterval(60), faces: 2),
+        ]
+        XCTAssertEqual(grouper.group(photos, sensitivity: .conservative).count, 1)
+    }
+
     // 30 bits apart → exceeds the Hamming prefilter (22), so the strict path
     // rejects the pair outright. A pose change can shift the perceptual hash this
     // far, so a same-session pair must bypass the prefilter and still group via
@@ -158,5 +204,54 @@ final class DuplicateGrouperTests: XCTestCase {
             photo("b", hash: farHash), // no dates → strict path only, prefilter rejects
         ]
         XCTAssertTrue(grouper.group(photos, sensitivity: .aggressive).isEmpty)
+    }
+
+    // MARK: - Color guard (same backdrop, different subject color)
+
+    // TestFlight report: bust-level close-ups with *different outfits* grouped
+    // together because the background looked the same. The relaxed same-session
+    // path must not merge a same-backdrop pair whose color distribution diverges.
+    func testDifferentColorsStaySeparateSameSession() {
+        // Same session, poseHash (0.3125 ≤ conservative relaxed 0.50) so the visual
+        // signals alone *would* group — but disjoint color histograms block it.
+        let photos = [
+            photo("redTop", hash: keeperHash, date: sessionStart, color: colorSig(bin: 0)),
+            photo("blueTop", hash: poseHash, date: sessionStart.addingTimeInterval(60),
+                  color: colorSig(bin: 63)),
+        ]
+        XCTAssertTrue(grouper.group(photos, sensitivity: .conservative).isEmpty,
+                      "Same backdrop but different subject color must not group")
+    }
+
+    func testSimilarColorsStillGroup() {
+        // Same session, same color distribution → the relaxed path still collapses
+        // the pose change to one keeper.
+        let photos = [
+            photo("a", hash: keeperHash, date: sessionStart, color: colorSig(bin: 10)),
+            photo("b", hash: poseHash, date: sessionStart.addingTimeInterval(60),
+                  color: colorSig(bin: 10)),
+        ]
+        XCTAssertEqual(grouper.group(photos, sensitivity: .conservative).count, 1)
+    }
+
+    func testMissingColorSignatureFallsBackToVisualGrouping() {
+        // One photo has no color signature (older cache) → the color gate is
+        // skipped and the pair groups on the visual signals exactly as before.
+        let photos = [
+            photo("a", hash: keeperHash, date: sessionStart, color: colorSig(bin: 0)),
+            photo("b", hash: poseHash, date: sessionStart.addingTimeInterval(60)),
+        ]
+        XCTAssertEqual(grouper.group(photos, sensitivity: .conservative).count, 1)
+    }
+
+    func testDifferentColorsIrrelevantOnStrictPath() {
+        // The color gate only guards the relaxed same-session path. A true visual
+        // duplicate (identical hash, within the strict threshold) still groups even
+        // with divergent color — protects flash/no-flash pairs of the same scene.
+        let photos = [
+            photo("a", hash: keeperHash, color: colorSig(bin: 0)),
+            photo("b", hash: keeperHash, color: colorSig(bin: 63)),
+        ]
+        XCTAssertEqual(grouper.group(photos, sensitivity: .conservative).count, 1)
     }
 }
