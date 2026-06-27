@@ -89,9 +89,10 @@ final class DuplicateGrouperTests: XCTestCase {
     private let sessionStart = Date(timeIntervalSince1970: 1_000_000)
 
     private func photo(_ id: String, hash: UInt64, date: Date? = nil,
-                       lat: Double? = nil, lon: Double? = nil) -> AnalyzedPhoto {
+                       lat: Double? = nil, lon: Double? = nil, faces: Int = 0) -> AnalyzedPhoto {
         AnalyzedPhoto(id: id, pixelCount: 1000, blockingKey: "block", hash: hash,
-                      feature: nil, captureDate: date, latitude: lat, longitude: lon)
+                      feature: nil, captureDate: date, latitude: lat, longitude: lon,
+                      faceCount: faces)
     }
 
     func testSameSessionGroupsDifferentPoses() {
@@ -134,6 +135,41 @@ final class DuplicateGrouperTests: XCTestCase {
             photo("a", hash: keeperHash, date: sessionStart, lat: 40.7128, lon: -74.0060),
             photo("b", hash: poseHash, date: sessionStart.addingTimeInterval(60),
                   lat: 40.7129, lon: -74.0060),
+        ]
+        XCTAssertEqual(grouper.group(photos, sensitivity: .conservative).count, 1)
+    }
+
+    // MARK: - Composition guard (different group sizes shouldn't merge)
+
+    // TestFlight report: at a party with the same backdrop, "the couple" and
+    // "the whole family" were grouped together. Different group sizes are
+    // distinct keepsakes, not duplicates — even visually similar and same-session.
+    func testDifferentFaceCountsStaySeparateEvenWhenVisuallySimilar() {
+        // Balanced would group these on BOTH the strict and session-relaxed paths
+        // (hamming 20 ≤ prefilter, 0.3125 ≤ thresholds); the composition guard
+        // must override that.
+        let photos = [
+            photo("couple", hash: keeperHash, date: sessionStart, faces: 2),
+            photo("family", hash: poseHash, date: sessionStart.addingTimeInterval(60), faces: 4),
+        ]
+        XCTAssertTrue(grouper.group(photos, sensitivity: .balanced).isEmpty,
+                      "Different group sizes at the same backdrop must not group")
+    }
+
+    func testSameFaceCountStillGroupsAcrossPoses() {
+        // Same two people, different poses in one session → still collapses.
+        let photos = [
+            photo("a", hash: keeperHash, date: sessionStart, faces: 2),
+            photo("b", hash: poseHash, date: sessionStart.addingTimeInterval(60), faces: 2),
+        ]
+        XCTAssertEqual(grouper.group(photos, sensitivity: .conservative).count, 1)
+    }
+
+    func testOneFaceFlickerIsTolerated() {
+        // A ±1 difference (a face momentarily un-detected across a burst) still groups.
+        let photos = [
+            photo("a", hash: keeperHash, date: sessionStart, faces: 3),
+            photo("b", hash: poseHash, date: sessionStart.addingTimeInterval(60), faces: 2),
         ]
         XCTAssertEqual(grouper.group(photos, sensitivity: .conservative).count, 1)
     }

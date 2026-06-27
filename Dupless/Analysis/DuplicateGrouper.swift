@@ -43,6 +43,11 @@ struct DuplicateGrouper {
                     // pairs skip the prefilter and get a real feature-distance check
                     // — otherwise a same-backdrop series never even reaches it.
                     guard withinPrefilter || session else { continue }
+                    // Photos with clearly different numbers of people are different
+                    // compositions — "just the couple" vs "the whole family" at the
+                    // same party backdrop — not duplicates. Never merge them,
+                    // however similar the background looks.
+                    guard compatibleComposition(a, b) else { continue }
                     let d = distance(a, b)
                     if withinPrefilter, d <= sensitivity.featureDistanceThreshold {
                         unionFind.union(indices[i], indices[j])
@@ -90,11 +95,14 @@ struct DuplicateGrouper {
         let d = distance(a, b)
         guard session || d <= 1.0 else { return }
         let gap = a.captureDate.flatMap { ca in b.captureDate.map { abs(ca.timeIntervalSince($0)) } } ?? -1
-        let grouped = (withinPrefilter && d <= sensitivity.featureDistanceThreshold)
-            || (session && d <= sensitivity.sessionRelaxedThreshold)
+        let composition = compatibleComposition(a, b)
+        let grouped = composition
+            && ((withinPrefilter && d <= sensitivity.featureDistanceThreshold)
+                || (session && d <= sensitivity.sessionRelaxedThreshold))
         let line = String(
-            format: "%@ × %@  hamming=%d  feat=%.3f  gapSec=%.0f  session=%@  prefilter=%@  → %@",
+            format: "%@ × %@  hamming=%d  feat=%.3f  gapSec=%.0f  faces=%d/%d  session=%@  prefilter=%@  → %@",
             String(a.id.prefix(6)), String(b.id.prefix(6)), hamming, d, gap,
+            a.faceCount, b.faceCount,
             session ? "Y" : "N", withinPrefilter ? "Y" : "N", grouped ? "GROUP" : "skip")
         Self.log.debug("\(line, privacy: .public)")
     }
@@ -117,6 +125,19 @@ struct DuplicateGrouper {
         }
         return true
     }
+
+    /// Two photos whose detected face counts differ by more than
+    /// `maxFaceCountDelta` are treated as distinct compositions and never grouped,
+    /// even when visually near-identical. A ±1 difference is tolerated to absorb
+    /// face-detection flicker across a burst of the same people; a larger gap
+    /// (a couple vs a crowd) blocks grouping. Photos with no detected faces
+    /// (0 vs 0, e.g. landscapes) are unaffected.
+    nonisolated func compatibleComposition(_ a: AnalyzedPhoto, _ b: AnalyzedPhoto) -> Bool {
+        abs(a.faceCount - b.faceCount) <= Self.maxFaceCountDelta
+    }
+
+    /// Max difference in detected face count for two photos to still be groupable.
+    static let maxFaceCountDelta = 1
 
     /// Vision feature-print distance when available, else a normalized Hamming
     /// fallback. Lower = more similar.

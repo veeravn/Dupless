@@ -31,6 +31,10 @@ struct AnalyzedPhoto {
     let captureDate: Date?
     let latitude: Double?
     let longitude: Double?
+    /// Detected face count. Lets the grouper keep deliberately different
+    /// compositions apart — e.g. "just the couple" vs "the whole family" shot
+    /// against the same party backdrop are different keepsakes, not duplicates.
+    let faceCount: Int
 
     init(
         id: String,
@@ -40,7 +44,8 @@ struct AnalyzedPhoto {
         feature: VNFeaturePrintObservation? = nil,
         captureDate: Date? = nil,
         latitude: Double? = nil,
-        longitude: Double? = nil
+        longitude: Double? = nil,
+        faceCount: Int = 0
     ) {
         self.id = id
         self.pixelCount = pixelCount
@@ -50,6 +55,7 @@ struct AnalyzedPhoto {
         self.captureDate = captureDate
         self.latitude = latitude
         self.longitude = longitude
+        self.faceCount = faceCount
     }
 }
 
@@ -100,7 +106,8 @@ struct CachedAnalysis: Sendable, Equatable {
             feature: featurePrintData.flatMap(FeaturePrintArchive.unarchive),
             captureDate: metadata.creationDate,
             latitude: metadata.latitude,
-            longitude: metadata.longitude
+            longitude: metadata.longitude,
+            faceCount: flags.faceCount
         )
     }
 
