@@ -175,13 +175,17 @@ final class DuplicateGrouperTests: XCTestCase {
         XCTAssertEqual(grouper.group(photos, sensitivity: .conservative).count, 1)
     }
 
-    func testOneFaceFlickerIsTolerated() {
-        // A ±1 difference (a face momentarily un-detected across a burst) still groups.
+    func testCoupleVsCouplePlusFriendStaySeparate() {
+        // "The couple" (2) vs "the couple + a friend" (3) at one backdrop is a
+        // different keepsake, not a duplicate — even visually near-identical and
+        // same-session. The equal-count rule (not ±1) must keep them apart on BOTH
+        // paths. Balanced would otherwise group them (0.3125 ≤ strict 0.55).
         let photos = [
-            photo("a", hash: keeperHash, date: sessionStart, faces: 3),
-            photo("b", hash: poseHash, date: sessionStart.addingTimeInterval(60), faces: 2),
+            photo("couple", hash: keeperHash, date: sessionStart, faces: 2),
+            photo("plusFriend", hash: poseHash, date: sessionStart.addingTimeInterval(60), faces: 3),
         ]
-        XCTAssertEqual(grouper.group(photos, sensitivity: .conservative).count, 1)
+        XCTAssertTrue(grouper.group(photos, sensitivity: .balanced).isEmpty,
+                      "Adding a person makes it a distinct photo — must not group")
     }
 
     // 30 bits apart → exceeds the Hamming prefilter (22), so the strict path

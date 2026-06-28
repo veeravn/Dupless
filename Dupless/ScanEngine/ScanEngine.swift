@@ -199,7 +199,12 @@ final class ScanEngine {
     /// Shared index→analyze stage: analyzes whatever isn't cached yet (persisting
     /// each result for resume) and returns the complete cached set for `targets`.
     private func analyzePending(targets: [String], signature: String, modelContext: ModelContext) async -> [CachedAnalysis] {
-        let cachedIDs = Set(cachedAnalyses(for: targets, in: modelContext).map(\.id))
+        // Only records from the current analysis pipeline count as cached; older
+        // ones (e.g. with low-res face prints) fall into `pending` and get
+        // re-analyzed, overwriting the stale record by id.
+        let cachedIDs = Set(cachedAnalyses(for: targets, in: modelContext)
+            .filter { $0.flags.analysisVersion >= PhotoAnalyzer.analysisVersion }
+            .map(\.id))
         let pending = ResumePlanner.pendingIdentifiers(targets: targets, cached: cachedIDs)
         scanLog.log("scan signature=\(signature) targets=\(targets.count) cached=\(cachedIDs.count) pending=\(pending.count)")
 

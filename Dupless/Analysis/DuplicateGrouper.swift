@@ -137,29 +137,24 @@ struct DuplicateGrouper {
         return true
     }
 
-    /// Two photos whose detected face counts differ by more than
-    /// `maxFaceCountDelta` are treated as distinct compositions and never grouped,
-    /// even when visually near-identical. A ±1 difference is tolerated to absorb
-    /// face-detection flicker across a burst of the same people; a larger gap
-    /// (a couple vs a crowd) blocks grouping. Photos with no detected faces
-    /// (0 vs 0, e.g. landscapes) are unaffected.
-    nonisolated func compatibleComposition(_ a: AnalyzedPhoto, _ b: AnalyzedPhoto) -> Bool {
-        abs(a.faceCount - b.faceCount) <= Self.maxFaceCountDelta
-    }
-
-    /// Max difference in detected face count for two photos to still be groupable.
-    static let maxFaceCountDelta = 1
-
-    /// Whether two photos show the same set of people, so they're safe to merge.
-    /// Requires a compatible head count first, then — when both photos carry
-    /// per-face prints — that every face on the smaller side has a near-match on
-    /// the larger side. An unmatched face is someone present in one shot but not
-    /// the other, i.e. a different grouping (a different family unit at the same
-    /// backdrop), which `faceCount` and `colorSignature` both miss. Falls back to
-    /// the count check alone when either photo lacks prints (Simulator, older
-    /// cache, or faceless photos) so nothing analyzed before this regresses.
+    /// Whether two photos show the *same set of people*, so they're safe to merge.
+    /// Requires an **equal** face count, then — when both photos carry per-face
+    /// prints — that every face on one side has a near-match on the other. This
+    /// keeps deliberately different compositions apart even when the backdrop,
+    /// head count, and overall color all match: not just "a couple vs a crowd"
+    /// (unequal counts), but "the couple" vs "the couple + a friend" (a subset),
+    /// and two same-size but different family units taking turns at one backdrop.
+    /// All of those are distinct keepsakes, not duplicates.
+    ///
+    /// Equal-count (rather than ±1) is deliberate: adding or dropping a person is
+    /// a different photo the user wants to keep. The cost is that a true burst of
+    /// the same people whose face *count* flickers by one won't merge — an
+    /// acceptable, safe-direction miss (both kept) versus a wrong merge.
+    ///
+    /// Falls back to the equal-count check alone when either photo lacks prints
+    /// (Simulator, older cache); faceless photos (0 == 0) are unaffected.
     nonisolated func samePeople(_ a: AnalyzedPhoto, _ b: AnalyzedPhoto) -> Bool {
-        guard compatibleComposition(a, b) else { return false }
+        guard a.faceCount == b.faceCount else { return false }
         guard !a.faceprints.isEmpty, !b.faceprints.isEmpty else { return true }
         return Self.faceprintsMatch(a.faceprints, b.faceprints,
                                     threshold: Self.faceMatchThreshold,
@@ -203,11 +198,14 @@ struct DuplicateGrouper {
     }
 
     /// Max per-face feature-print distance for two face crops to count as the same
-    /// person. Conservative (generous) so a pose/expression change in the same
-    /// person still matches; tight enough that a clearly different person doesn't.
-    /// This is the one value to tune from the DEBUG `CLEANSHOTS_GROUP_LOG`
-    /// (`face=` field) once the tester runs it on real photos.
-    static let faceMatchThreshold: Float = 0.7
+    /// person. Set from measured data (`scratchpad/face-distance-diag.swift` over
+    /// real photos): at the ~1024px face-crop resolution, same-person pairs land
+    /// ≈0.32–0.56 and different-person pairs ≈0.60–0.83, so 0.55 sits in the gap.
+    /// Crops MUST come from a high-res render — at the 256px analysis thumbnail
+    /// faces are ~15–40px and the two populations overlap completely, which is why
+    /// an earlier 0.7-at-256px attempt still over-grouped. Tunable from the DEBUG
+    /// `CLEANSHOTS_GROUP_LOG` `face=` field.
+    static let faceMatchThreshold: Float = 0.55
 
     /// Whether two photos are close enough in overall color for the relaxed
     /// same-session merge. Returns true when either lacks a color signature (older

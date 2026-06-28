@@ -40,6 +40,14 @@ struct PhotoFlags: Sendable, Equatable, Codable {
     /// Simulator, and for records cached before this field existed. Defaulted so
     /// the existing cache stays decodable without a schema migration.
     var faceprints: [Data] = []
+    /// Version of the analysis pipeline that produced this record. Lets a scan
+    /// re-analyze records made by an older pipeline instead of trusting stale
+    /// cached data — e.g. face prints cropped from the old 256px thumbnail are
+    /// useless for identity matching, so bumping `PhotoAnalyzer.analysisVersion`
+    /// forces them to be recomputed at the new resolution. Defaults to 0 (the
+    /// implicit version of every record cached before this field existed), so it's
+    /// migration-free.
+    var analysisVersion: Int = 0
 
     static let none = PhotoFlags()
 }

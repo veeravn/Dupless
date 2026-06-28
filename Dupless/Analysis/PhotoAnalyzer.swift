@@ -5,6 +5,12 @@ import UIKit
 /// feature print + blocking key (MVP 1) plus quality scores, face detection, and
 /// protection flags (MVP 2). Runs off the main actor; on-device only.
 struct PhotoAnalyzer {
+    /// Current analysis-pipeline version, stamped onto every record. Bump when a
+    /// change makes older cached records unusable so a scan recomputes them
+    /// instead of trusting stale data. v1: face prints moved to a high-res crop
+    /// (the 256px-thumbnail prints couldn't distinguish people).
+    static let analysisVersion = 1
+
     private let hashService = PerceptualHashService()
     private let featureService = VisionFeaturePrintService()
     private let qualityService = QualityScoringService()
@@ -19,8 +25,16 @@ struct PhotoAnalyzer {
         let featureData = featureService.featurePrint(for: image).flatMap(FeaturePrintArchive.archive)
         var quality = qualityService.scores(for: image)
         quality.colorSignature = Self.colorSignature(for: image)
-        let face = faceService.detect(in: image)
-        let flags = Self.flags(for: asset, face: face)
+        let (faceCount, personDetected) = faceService.detect(in: image)
+        // Face-identity prints need a higher-res crop than the 256px thumbnail
+        // (faces there are too small to tell people apart), so fetch a larger
+        // on-device render — but only when a face was actually detected.
+        var faceprints: [Data] = []
+        if personDetected, let faceImage = await loader.faceSource(for: asset) {
+            faceprints = faceService.faceprints(in: faceImage)
+        }
+        let flags = Self.flags(for: asset, faceCount: faceCount,
+                               personDetected: personDetected, faceprints: faceprints)
 
         return CachedAnalysis(
             id: identifier,
@@ -90,7 +104,8 @@ struct PhotoAnalyzer {
 
     /// Reads PhotoKit metadata into protection flags, carrying the face-detection
     /// result (count + per-face prints) through unchanged.
-    nonisolated static func flags(for asset: PHAsset, face: FacePersonDetectionService.Result) -> PhotoFlags {
+    nonisolated static func flags(for asset: PHAsset, faceCount: Int,
+                                  personDetected: Bool, faceprints: [Data]) -> PhotoFlags {
         let resources = PHAssetResource.assetResources(for: asset)
         let isEdited = resources.contains { $0.type == .adjustmentData || $0.type == .fullSizePhoto }
         let isLive = asset.mediaSubtypes.contains(.photoLive)
@@ -102,9 +117,10 @@ struct PhotoAnalyzer {
             isLivePhoto: isLive,
             isHidden: asset.isHidden,
             isShared: isShared,
-            faceCount: face.faceCount,
-            personDetected: face.personDetected,
-            faceprints: face.faceprints
+            faceCount: faceCount,
+            personDetected: personDetected,
+            faceprints: faceprints,
+            analysisVersion: analysisVersion
         )
     }
 }

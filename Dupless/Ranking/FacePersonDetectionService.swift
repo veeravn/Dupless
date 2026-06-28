@@ -1,46 +1,36 @@
 import Vision
 import UIKit
 
-/// Detects faces/people with Vision and, in the same pass, computes a feature
-/// print for each face crop. Face *detection* runs on the Simulator too; the
-/// per-face feature prints (like the whole-image ones) are device-only, so on
-/// the Simulator `faceprints` comes back empty and the grouper falls back to a
-/// face-*count* check. Used to protect photos with people (count) and to tell
-/// whether two photos show the *same* people (prints).
+/// Detects faces/people with Vision and, separately, computes a feature print per
+/// face crop for identity matching.
+///
+/// `detect` runs on the small analysis thumbnail (cheap; also works on the
+/// Simulator) for the count + protection signal. `faceprints` must be given a
+/// HIGHER-RESOLUTION render: in the 256px thumbnail a face is only ~15–40px, far
+/// too small for the feature print to tell people apart (measured — the same- and
+/// different-person distance populations overlap completely at that size). Like
+/// the whole-image feature print, the per-face prints are device-only, so on the
+/// Simulator `faceprints` returns empty and the grouper falls back to face count.
 struct FacePersonDetectionService {
     private let featureService = VisionFeaturePrintService()
 
-    /// Cap on how many faces we print per photo. The largest (principal) faces
-    /// are kept, so a crowd shot doesn't blow up storage or compute.
+    /// Cap on how many faces we print per photo. The largest (principal) faces are
+    /// kept, so a crowd shot doesn't blow up storage or compute.
     static let maxFaces = 4
 
-    struct Result {
-        let faceCount: Int
-        let personDetected: Bool
-        /// Archived `VNFeaturePrintObservation` per detected face crop, largest
-        /// face first, capped at `maxFaces`. Empty on Simulator / when faceless.
-        let faceprints: [Data]
+    /// Cheap count/protection signal from the analysis thumbnail.
+    nonisolated func detect(in image: UIImage) -> (faceCount: Int, personDetected: Bool) {
+        guard let cgImage = image.cgImage else { return (0, false) }
+        let count = detectFaces(in: cgImage).count
+        return (count, count > 0)
     }
 
-    nonisolated func detect(in image: UIImage) -> Result {
-        guard let cgImage = image.cgImage else {
-            return Result(faceCount: 0, personDetected: false, faceprints: [])
-        }
-        let request = VNDetectFaceRectanglesRequest()
-        let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
-        do {
-            try handler.perform([request])
-            let faces = request.results ?? []
-            return Result(faceCount: faces.count, personDetected: !faces.isEmpty,
-                          faceprints: faceprints(for: faces, in: cgImage))
-        } catch {
-            return Result(faceCount: 0, personDetected: false, faceprints: [])
-        }
-    }
-
-    /// Crops each face (largest first) and archives a feature print per crop.
-    private nonisolated func faceprints(for faces: [VNFaceObservation], in cgImage: CGImage) -> [Data] {
-        let ordered = faces
+    /// Per-face feature prints (largest faces first, capped at `maxFaces`),
+    /// archived for caching. Pass a high-resolution render — see the type note.
+    /// Empty on the Simulator / when faceless.
+    nonisolated func faceprints(in image: UIImage) -> [Data] {
+        guard let cgImage = image.cgImage else { return [] }
+        let ordered = detectFaces(in: cgImage)
             .sorted { $0.boundingBox.width * $0.boundingBox.height > $1.boundingBox.width * $1.boundingBox.height }
             .prefix(Self.maxFaces)
         var prints: [Data] = []
@@ -52,6 +42,13 @@ struct FacePersonDetectionService {
             prints.append(print)
         }
         return prints
+    }
+
+    private nonisolated func detectFaces(in cgImage: CGImage) -> [VNFaceObservation] {
+        let request = VNDetectFaceRectanglesRequest()
+        let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
+        try? handler.perform([request])
+        return request.results ?? []
     }
 
     /// Converts a Vision normalized boundingBox (origin bottom-left) to a pixel
