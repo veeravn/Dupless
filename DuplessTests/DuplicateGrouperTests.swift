@@ -329,3 +329,32 @@ final class DuplicateGrouperTests: XCTestCase {
         XCTAssertEqual(grouper.group(photos, sensitivity: .conservative).count, 1)
     }
 }
+
+/// Guards the migration-safety of additive `PhotoFlags` fields: records written by
+/// an older pipeline (whose stored JSON lacks newer keys) must still decode, with
+/// the new fields taking their defaults. Without the custom `init(from:)` Swift
+/// throws `keyNotFound` for non-optional defaulted fields, which broke reading the
+/// cache across versions and silently disabled face-identity matching.
+final class PhotoFlagsCodableMigrationTests: XCTestCase {
+    func testDecodesOldRecordMissingNewerKeys() throws {
+        // JSON as an older build would have stored it — no faceprints/analysisVersion.
+        let oldJSON = """
+        {"isFavorite":true,"isEdited":false,"isLivePhoto":false,
+         "isHidden":false,"isShared":false,"faceCount":3,"personDetected":true}
+        """.data(using: .utf8)!
+        let flags = try JSONDecoder().decode(PhotoFlags.self, from: oldJSON)
+        XCTAssertEqual(flags.faceCount, 3)
+        XCTAssertTrue(flags.isFavorite)
+        XCTAssertTrue(flags.personDetected)
+        XCTAssertEqual(flags.faceprints, [], "missing faceprints must default to empty")
+        XCTAssertEqual(flags.analysisVersion, 0, "missing version must default to 0 → re-analyze")
+    }
+
+    func testRoundTripsCurrentRecord() throws {
+        let original = PhotoFlags(faceCount: 2, personDetected: true,
+                                  faceprints: [Data([1, 2, 3])], analysisVersion: 1)
+        let data = try JSONEncoder().encode(original)
+        let decoded = try JSONDecoder().decode(PhotoFlags.self, from: data)
+        XCTAssertEqual(decoded, original)
+    }
+}

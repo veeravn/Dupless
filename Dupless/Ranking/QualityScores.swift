@@ -52,6 +52,27 @@ struct PhotoFlags: Sendable, Equatable, Codable {
     static let none = PhotoFlags()
 }
 
+extension PhotoFlags {
+    /// Custom decode so records written by an OLDER pipeline (whose stored JSON
+    /// lacks newer keys like `faceprints` / `analysisVersion`) still load. Swift's
+    /// synthesized `Codable` does NOT fall back to a property's default for a
+    /// missing key — it throws `keyNotFound` — so a defaulted *non-optional* field
+    /// is only migration-safe with `decodeIfPresent` here. (Encoding stays
+    /// synthesized.) Kept in an extension so the memberwise init is preserved.
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        isFavorite = try c.decodeIfPresent(Bool.self, forKey: .isFavorite) ?? false
+        isEdited = try c.decodeIfPresent(Bool.self, forKey: .isEdited) ?? false
+        isLivePhoto = try c.decodeIfPresent(Bool.self, forKey: .isLivePhoto) ?? false
+        isHidden = try c.decodeIfPresent(Bool.self, forKey: .isHidden) ?? false
+        isShared = try c.decodeIfPresent(Bool.self, forKey: .isShared) ?? false
+        faceCount = try c.decodeIfPresent(Int.self, forKey: .faceCount) ?? 0
+        personDetected = try c.decodeIfPresent(Bool.self, forKey: .personDetected) ?? false
+        faceprints = try c.decodeIfPresent([Data].self, forKey: .faceprints) ?? []
+        analysisVersion = try c.decodeIfPresent(Int.self, forKey: .analysisVersion) ?? 0
+    }
+}
+
 /// A photo ready to be ranked within a group.
 struct RankablePhoto: Sendable, Equatable {
     let id: String
