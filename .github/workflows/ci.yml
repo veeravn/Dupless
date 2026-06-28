@@ -2,8 +2,20 @@ name: CI
 
 on:
   pull_request:
+    # Skip the (10×-billed) macOS run entirely for doc/asset-only changes.
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths-ignore:
+      - '**/*.md'
+      - 'marketing/**'
+      - 'docs/**'
+      - 'LICENSE'
   push:
     branches: [main]
+    paths-ignore:
+      - '**/*.md'
+      - 'marketing/**'
+      - 'docs/**'
+      - 'LICENSE'
 
 # Cancel an in-progress run when new commits land on the same ref.
 concurrency:
@@ -14,6 +26,10 @@ jobs:
   test:
     name: Build & Test
     runs-on: macos-15
+    # macOS minutes bill at 10×, so cap a hung run (the suite can crash the
+    # simulator host) and skip draft PRs until they're marked ready for review.
+    timeout-minutes: 30
+    if: github.event_name == 'push' || github.event.pull_request.draft == false
     env:
       # The simulator to test on. OS=latest uses whatever iOS runtime ships with
       # the selected Xcode; the app's floor is iOS 26.0. Bump the device name here
@@ -37,8 +53,20 @@ jobs:
           echo "--- available iPhone simulators ---"
           xcrun simctl list devices available | grep -i iphone || true
 
-      - name: Install xcbeautify
-        run: brew install xcbeautify
+      # Installs xcbeautify from GitHub releases — faster than `brew install`.
+      - name: Set up xcbeautify
+        uses: xcode-actions/setup-xcbeautify@v3
+
+      # Cache DerivedData to speed up consecutive xcodebuild runs. Keyed on the
+      # project file, falling back to the latest cache otherwise. If this stops
+      # paying for itself (macOS cache restore/save isn't always a net win), drop it.
+      - name: Cache DerivedData
+        uses: actions/cache@v4
+        with:
+          path: ~/Library/Developer/Xcode/DerivedData
+          key: ${{ runner.os }}-deriveddata-${{ hashFiles('**/*.pbxproj') }}
+          restore-keys: |
+            ${{ runner.os }}-deriveddata-
 
       - name: Build & test
         run: |
@@ -49,7 +77,10 @@ jobs:
             -destination "$DESTINATION" \
             -parallel-testing-enabled NO \
             -resultBundlePath TestResults.xcresult \
+            -skipMacroValidation \
             CODE_SIGNING_ALLOWED=NO \
+            COMPILER_INDEX_STORE_ENABLE=NO \
+            ONLY_ACTIVE_ARCH=YES \
             | xcbeautify
         # Note: the default xcbeautify renderer is used deliberately. The
         # github-actions renderer promotes every error-pattern log line to a PR
@@ -58,8 +89,10 @@ jobs:
         # annotations. Real test failures still fail the job and appear in logs and
         # the uploaded xcresult.
 
+      # Only upload on failure — the xcresult is only useful for a red run, and
+      # skipping it on the common green path shaves a little runner time.
       - name: Upload test results
-        if: ${{ !cancelled() }}
+        if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: TestResults
