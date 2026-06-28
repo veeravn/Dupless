@@ -19,8 +19,8 @@ struct PhotoAnalyzer {
         let featureData = featureService.featurePrint(for: image).flatMap(FeaturePrintArchive.archive)
         var quality = qualityService.scores(for: image)
         quality.colorSignature = Self.colorSignature(for: image)
-        let (faceCount, personDetected) = faceService.detect(in: image)
-        let flags = Self.flags(for: asset, faceCount: faceCount, personDetected: personDetected)
+        let face = faceService.detect(in: image)
+        let flags = Self.flags(for: asset, face: face)
 
         return CachedAnalysis(
             id: identifier,
@@ -88,8 +88,9 @@ struct PhotoAnalyzer {
         )
     }
 
-    /// Reads PhotoKit metadata into protection flags.
-    nonisolated static func flags(for asset: PHAsset, faceCount: Int, personDetected: Bool) -> PhotoFlags {
+    /// Reads PhotoKit metadata into protection flags, carrying the face-detection
+    /// result (count + per-face prints) through unchanged.
+    nonisolated static func flags(for asset: PHAsset, face: FacePersonDetectionService.Result) -> PhotoFlags {
         let resources = PHAssetResource.assetResources(for: asset)
         let isEdited = resources.contains { $0.type == .adjustmentData || $0.type == .fullSizePhoto }
         let isLive = asset.mediaSubtypes.contains(.photoLive)
@@ -101,8 +102,9 @@ struct PhotoAnalyzer {
             isLivePhoto: isLive,
             isHidden: asset.isHidden,
             isShared: isShared,
-            faceCount: faceCount,
-            personDetected: personDetected
+            faceCount: face.faceCount,
+            personDetected: face.personDetected,
+            faceprints: face.faceprints
         )
     }
 }

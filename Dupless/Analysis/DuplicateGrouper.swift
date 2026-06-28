@@ -43,11 +43,14 @@ struct DuplicateGrouper {
                     // pairs skip the prefilter and get a real feature-distance check
                     // — otherwise a same-backdrop series never even reaches it.
                     guard withinPrefilter || session else { continue }
-                    // Photos with clearly different numbers of people are different
-                    // compositions — "just the couple" vs "the whole family" at the
-                    // same party backdrop — not duplicates. Never merge them,
-                    // however similar the background looks.
-                    guard compatibleComposition(a, b) else { continue }
+                    // Photos showing different people are different compositions —
+                    // "just the couple" vs "the whole family", or two family units
+                    // taking turns at the same party backdrop — not duplicates.
+                    // Never merge them, however similar the background, the head
+                    // count, or the overall color. Applies to BOTH the strict and
+                    // the relaxed paths (same-backdrop look-alikes pass the strict
+                    // path too).
+                    guard samePeople(a, b) else { continue }
                     let d = distance(a, b)
                     if withinPrefilter, d <= sensitivity.featureDistanceThreshold {
                         unionFind.union(indices[i], indices[j])
@@ -101,15 +104,16 @@ struct DuplicateGrouper {
         let d = distance(a, b)
         guard session || d <= 1.0 else { return }
         let gap = a.captureDate.flatMap { ca in b.captureDate.map { abs(ca.timeIntervalSince($0)) } } ?? -1
-        let composition = compatibleComposition(a, b)
+        let people = samePeople(a, b)
         let color = colorSimilarity(a, b) ?? -1
-        let grouped = composition
+        let face = worstFaceMatch(a, b) ?? -1
+        let grouped = people
             && ((withinPrefilter && d <= sensitivity.featureDistanceThreshold)
                 || (session && d <= sensitivity.sessionRelaxedThreshold && similarColor(a, b)))
         let line = String(
-            format: "%@ × %@  hamming=%d  feat=%.3f  gapSec=%.0f  faces=%d/%d  color=%.2f  session=%@  prefilter=%@  → %@",
+            format: "%@ × %@  hamming=%d  feat=%.3f  gapSec=%.0f  faces=%d/%d  face=%.3f  color=%.2f  session=%@  prefilter=%@  → %@",
             String(a.id.prefix(6)), String(b.id.prefix(6)), hamming, d, gap,
-            a.faceCount, b.faceCount, color,
+            a.faceCount, b.faceCount, face, color,
             session ? "Y" : "N", withinPrefilter ? "Y" : "N", grouped ? "GROUP" : "skip")
         Self.log.debug("\(line, privacy: .public)")
     }
@@ -145,6 +149,65 @@ struct DuplicateGrouper {
 
     /// Max difference in detected face count for two photos to still be groupable.
     static let maxFaceCountDelta = 1
+
+    /// Whether two photos show the same set of people, so they're safe to merge.
+    /// Requires a compatible head count first, then — when both photos carry
+    /// per-face prints — that every face on the smaller side has a near-match on
+    /// the larger side. An unmatched face is someone present in one shot but not
+    /// the other, i.e. a different grouping (a different family unit at the same
+    /// backdrop), which `faceCount` and `colorSignature` both miss. Falls back to
+    /// the count check alone when either photo lacks prints (Simulator, older
+    /// cache, or faceless photos) so nothing analyzed before this regresses.
+    nonisolated func samePeople(_ a: AnalyzedPhoto, _ b: AnalyzedPhoto) -> Bool {
+        guard compatibleComposition(a, b) else { return false }
+        guard !a.faceprints.isEmpty, !b.faceprints.isEmpty else { return true }
+        return Self.faceprintsMatch(a.faceprints, b.faceprints,
+                                    threshold: Self.faceMatchThreshold,
+                                    distance: faceDistance)
+    }
+
+    /// Pure people-set match: every face on the smaller side must have some face
+    /// on the larger side within `threshold`. `distance` is injected so the set
+    /// logic is unit-testable without the device-only feature-print model.
+    nonisolated static func faceprintsMatch(_ x: [Data], _ y: [Data], threshold: Float,
+                                            distance: (Data, Data) -> Float) -> Bool {
+        let (fewer, more) = x.count <= y.count ? (x, y) : (y, x)
+        for face in fewer where (more.map { distance(face, $0) }.min() ?? .greatestFiniteMagnitude) > threshold {
+            return false
+        }
+        return true
+    }
+
+    /// Feature-print distance between two archived face crops; large when either
+    /// can't be unarchived/compared, so an uncomparable pair never counts as a
+    /// match.
+    nonisolated func faceDistance(_ a: Data, _ b: Data) -> Float {
+        guard let oa = FeaturePrintArchive.unarchive(a), let ob = FeaturePrintArchive.unarchive(b),
+              let d = featureService.distance(oa, ob) else { return .greatestFiniteMagnitude }
+        return d
+    }
+
+    /// The deciding face-match distance for a pair — the *worst* of the smaller
+    /// side's best matches. Below `faceMatchThreshold` ⇒ same people. Surfaced in
+    /// the DEBUG log so the threshold can be tuned against real photos. Nil when
+    /// either photo lacks prints.
+    nonisolated func worstFaceMatch(_ a: AnalyzedPhoto, _ b: AnalyzedPhoto) -> Float? {
+        guard !a.faceprints.isEmpty, !b.faceprints.isEmpty else { return nil }
+        let (fewer, more) = a.faceprints.count <= b.faceprints.count
+            ? (a.faceprints, b.faceprints) : (b.faceprints, a.faceprints)
+        var worst: Float = 0
+        for face in fewer {
+            worst = max(worst, more.map { faceDistance(face, $0) }.min() ?? .greatestFiniteMagnitude)
+        }
+        return worst
+    }
+
+    /// Max per-face feature-print distance for two face crops to count as the same
+    /// person. Conservative (generous) so a pose/expression change in the same
+    /// person still matches; tight enough that a clearly different person doesn't.
+    /// This is the one value to tune from the DEBUG `CLEANSHOTS_GROUP_LOG`
+    /// (`face=` field) once the tester runs it on real photos.
+    static let faceMatchThreshold: Float = 0.7
 
     /// Whether two photos are close enough in overall color for the relaxed
     /// same-session merge. Returns true when either lacks a color signature (older

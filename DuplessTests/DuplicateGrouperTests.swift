@@ -254,4 +254,74 @@ final class DuplicateGrouperTests: XCTestCase {
         ]
         XCTAssertEqual(grouper.group(photos, sensitivity: .conservative).count, 1)
     }
+
+    // MARK: - People-set matching (different family units, same backdrop)
+
+    // TestFlight report: the SAME seated couple was photographed with different
+    // family members around them at one venue — same head count, same dominant
+    // colors — and all the shots merged. The faces are the only thing that
+    // differs. `faceprintsMatch` is the pure set-matching core; the feature-print
+    // model is device-only, so the per-face distance is injected here (0 = same
+    // person, 1 = different) exactly as the hash-fallback tests stand in for the
+    // device feature print elsewhere.
+    private func face(_ tag: UInt8) -> Data { Data([tag]) }
+    private func exactMatch(_ a: Data, _ b: Data) -> Float { a == b ? 0 : 1 }
+    private let faceThreshold: Float = 0.5
+
+    func testSamePeopleMatch() {
+        XCTAssertTrue(DuplicateGrouper.faceprintsMatch(
+            [face(1), face(2)], [face(1), face(2)],
+            threshold: faceThreshold, distance: exactMatch))
+    }
+
+    func testSamePeopleMatchIsOrderInvariant() {
+        XCTAssertTrue(DuplicateGrouper.faceprintsMatch(
+            [face(1), face(2)], [face(2), face(1)],
+            threshold: faceThreshold, distance: exactMatch))
+    }
+
+    func testDifferentPeopleSameCountDoNotMatch() {
+        // The party case: shared person 1, but 2 vs 3 → an unmatched face on each
+        // side ⇒ different grouping.
+        XCTAssertFalse(DuplicateGrouper.faceprintsMatch(
+            [face(1), face(2)], [face(1), face(3)],
+            threshold: faceThreshold, distance: exactMatch))
+    }
+
+    func testSharedCoupleDifferentGuestsDoNotMatch() {
+        // Seated couple (1,2) identical across both; the third person differs.
+        XCTAssertFalse(DuplicateGrouper.faceprintsMatch(
+            [face(1), face(2), face(3)], [face(1), face(2), face(4)],
+            threshold: faceThreshold, distance: exactMatch))
+    }
+
+    func testSubsetOfPeopleStillMatches() {
+        // Smaller side fully present in the larger (a face momentarily missed, or
+        // one extra person) — the count guard governs that ±1, not this check.
+        XCTAssertTrue(DuplicateGrouper.faceprintsMatch(
+            [face(1)], [face(1), face(2)],
+            threshold: faceThreshold, distance: exactMatch))
+    }
+
+    func testNearButDistinctFacesBlockedByThreshold() {
+        // Same person across a pose change sits just under the threshold and
+        // matches; a clearly different face sits above it and blocks.
+        let near: (Data, Data) -> Float = { a, b in a == b ? 0 : (a == self.face(1) && b == self.face(9) ? 0.4 : 1) }
+        XCTAssertTrue(DuplicateGrouper.faceprintsMatch(
+            [face(1)], [face(9)], threshold: faceThreshold, distance: near),
+            "0.4 ≤ 0.5 → same person")
+        XCTAssertFalse(DuplicateGrouper.faceprintsMatch(
+            [face(1)], [face(2)], threshold: faceThreshold, distance: near),
+            "1.0 > 0.5 → different person")
+    }
+
+    func testMissingFaceprintsFallBackToCountGuard() {
+        // No prints on either side (Simulator / older cache) → grouping is
+        // unchanged: same-session different poses still collapse.
+        let photos = [
+            photo("a", hash: keeperHash, date: sessionStart),
+            photo("b", hash: poseHash, date: sessionStart.addingTimeInterval(60)),
+        ]
+        XCTAssertEqual(grouper.group(photos, sensitivity: .conservative).count, 1)
+    }
 }

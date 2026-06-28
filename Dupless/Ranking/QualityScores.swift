@@ -33,6 +33,13 @@ struct PhotoFlags: Sendable, Equatable, Codable {
     var isShared: Bool = false
     var faceCount: Int = 0
     var personDetected: Bool = false
+    /// Archived Vision feature print per detected face (largest faces first).
+    /// Lets the grouper check whether two photos show the *same people* — so
+    /// different family groupings shot against one backdrop stay apart, which
+    /// face *count* alone can't distinguish. Empty for faceless photos, on the
+    /// Simulator, and for records cached before this field existed. Defaulted so
+    /// the existing cache stays decodable without a schema migration.
+    var faceprints: [Data] = []
 
     static let none = PhotoFlags()
 }

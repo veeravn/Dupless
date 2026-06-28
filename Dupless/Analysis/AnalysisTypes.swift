@@ -40,6 +40,12 @@ struct AnalyzedPhoto {
     /// shots that share a backdrop but differ in subject color (e.g. an outfit
     /// change) — signals the grayscale hash and feature print both miss.
     let colorSignature: Data?
+    /// Archived feature print per detected face (largest first). Lets the grouper
+    /// require that two photos show the *same people* before merging — so
+    /// different family groupings at one backdrop, which share count and color,
+    /// stay apart. Empty on Simulator / older cache → grouper falls back to the
+    /// face-count guard.
+    let faceprints: [Data]
 
     init(
         id: String,
@@ -51,7 +57,8 @@ struct AnalyzedPhoto {
         latitude: Double? = nil,
         longitude: Double? = nil,
         faceCount: Int = 0,
-        colorSignature: Data? = nil
+        colorSignature: Data? = nil,
+        faceprints: [Data] = []
     ) {
         self.id = id
         self.pixelCount = pixelCount
@@ -63,6 +70,7 @@ struct AnalyzedPhoto {
         self.longitude = longitude
         self.faceCount = faceCount
         self.colorSignature = colorSignature
+        self.faceprints = faceprints
     }
 }
 
@@ -115,7 +123,8 @@ struct CachedAnalysis: Sendable, Equatable {
             latitude: metadata.latitude,
             longitude: metadata.longitude,
             faceCount: flags.faceCount,
-            colorSignature: quality.colorSignature
+            colorSignature: quality.colorSignature,
+            faceprints: flags.faceprints
         )
     }
 
