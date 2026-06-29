@@ -112,9 +112,9 @@ struct DuplicateGrouper {
                 || (sensitivity.groupsSameSessionPoses && session
                     && d <= sensitivity.sessionRelaxedThreshold && similarColor(a, b)))
         let line = String(
-            format: "%@ × %@  hamming=%d  feat=%.3f  gapSec=%.0f  faces=%d/%d  face=%.3f  color=%.2f  session=%@  prefilter=%@  → %@",
+            format: "%@ × %@  hamming=%d  feat=%.3f  gapSec=%.0f  faces=%d/%d  prints=%d/%d  face=%.3f  color=%.2f  session=%@  prefilter=%@  → %@",
             String(a.id.prefix(6)), String(b.id.prefix(6)), hamming, d, gap,
-            a.faceCount, b.faceCount, face, color,
+            a.faceCount, b.faceCount, a.faceprints.count, b.faceprints.count, face, color,
             session ? "Y" : "N", withinPrefilter ? "Y" : "N", grouped ? "GROUP" : "skip")
         Self.log.debug("\(line, privacy: .public)")
     }

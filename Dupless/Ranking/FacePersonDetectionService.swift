@@ -1,3 +1,4 @@
+import CoreImage
 import Vision
 import UIKit
 
@@ -20,7 +21,7 @@ struct FacePersonDetectionService {
 
     /// Cheap count/protection signal from the analysis thumbnail.
     nonisolated func detect(in image: UIImage) -> (faceCount: Int, personDetected: Bool) {
-        guard let cgImage = image.cgImage else { return (0, false) }
+        guard let cgImage = Self.cgImage(from: image) else { return (0, false) }
         let count = detectFaces(in: cgImage).count
         return (count, count > 0)
     }
@@ -29,7 +30,7 @@ struct FacePersonDetectionService {
     /// archived for caching. Pass a high-resolution render — see the type note.
     /// Empty on the Simulator / when faceless.
     nonisolated func faceprints(in image: UIImage) -> [Data] {
-        guard let cgImage = image.cgImage else { return [] }
+        guard let cgImage = Self.cgImage(from: image) else { return [] }
         let ordered = detectFaces(in: cgImage)
             .sorted { $0.boundingBox.width * $0.boundingBox.height > $1.boundingBox.width * $1.boundingBox.height }
             .prefix(Self.maxFaces)
@@ -42,6 +43,15 @@ struct FacePersonDetectionService {
             prints.append(print)
         }
         return prints
+    }
+
+    /// A CGImage for Vision. PHImageManager usually returns CGImage-backed
+    /// UIImages, but a CIImage-backed one (`.cgImage == nil`) would silently yield
+    /// zero face prints, so fall back to rendering the CIImage.
+    private nonisolated static func cgImage(from image: UIImage) -> CGImage? {
+        if let cg = image.cgImage { return cg }
+        guard let ci = image.ciImage else { return nil }
+        return CIContext().createCGImage(ci, from: ci.extent)
     }
 
     private nonisolated func detectFaces(in cgImage: CGImage) -> [VNFaceObservation] {

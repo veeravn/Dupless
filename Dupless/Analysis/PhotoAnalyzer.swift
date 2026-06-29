@@ -8,8 +8,10 @@ struct PhotoAnalyzer {
     /// Current analysis-pipeline version, stamped onto every record. Bump when a
     /// change makes older cached records unusable so a scan recomputes them
     /// instead of trusting stale data. v1: face prints moved to a high-res crop
-    /// (the 256px-thumbnail prints couldn't distinguish people).
-    static let analysisVersion = 1
+    /// (the 256px-thumbnail prints couldn't distinguish people). v2: force a clean
+    /// re-analysis on top of the Codable-decode fix and the hardened face-print
+    /// render, so devices that cached empty/low-res prints under v1 recompute them.
+    static let analysisVersion = 2
 
     private let hashService = PerceptualHashService()
     private let featureService = VisionFeaturePrintService()
