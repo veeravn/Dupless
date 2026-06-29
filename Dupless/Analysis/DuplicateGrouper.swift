@@ -54,16 +54,16 @@ struct DuplicateGrouper {
                     let d = distance(a, b)
                     if withinPrefilter, d <= sensitivity.featureDistanceThreshold {
                         unionFind.union(indices[i], indices[j])
-                    } else if session, d <= sensitivity.sessionRelaxedThreshold,
-                              similarColor(a, b) {
-                        // Same shooting session: a pose change against the same
-                        // backdrop still groups, so the series collapses to one
-                        // keeper instead of staying ungrouped. The color gate keeps
-                        // this relaxed merge from swallowing a same-backdrop shot
-                        // whose subject changed color (e.g. an outfit change) — the
-                        // grayscale hash and feature print under-weight that, so the
-                        // coarse color histogram catches it. Gating only this path
-                        // never weakens the strict true-duplicate match above.
+                    } else if sensitivity.groupsSameSessionPoses, session,
+                              d <= sensitivity.sessionRelaxedThreshold, similarColor(a, b) {
+                        // Aggressive only: a pose change against the same backdrop
+                        // collapses the series to one keeper. OFF by default —
+                        // testers wanted distinct moments at the same place kept
+                        // apart, so conservative/balanced group only near-identical
+                        // frames via the strict path above. The color gate further
+                        // keeps this merge from swallowing a same-backdrop shot
+                        // whose subject changed color (an outfit change), which the
+                        // grayscale hash and feature print under-weight.
                         unionFind.union(indices[i], indices[j])
                     }
                 }
@@ -109,7 +109,8 @@ struct DuplicateGrouper {
         let face = worstFaceMatch(a, b) ?? -1
         let grouped = people
             && ((withinPrefilter && d <= sensitivity.featureDistanceThreshold)
-                || (session && d <= sensitivity.sessionRelaxedThreshold && similarColor(a, b)))
+                || (sensitivity.groupsSameSessionPoses && session
+                    && d <= sensitivity.sessionRelaxedThreshold && similarColor(a, b)))
         let line = String(
             format: "%@ × %@  hamming=%d  feat=%.3f  gapSec=%.0f  faces=%d/%d  face=%.3f  color=%.2f  session=%@  prefilter=%@  → %@",
             String(a.id.prefix(6)), String(b.id.prefix(6)), hamming, d, gap,
