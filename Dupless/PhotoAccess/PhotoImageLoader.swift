@@ -72,16 +72,23 @@ final class PhotoImageLoader: @unchecked Sendable {
     /// can't; measured).
     static let faceSourceSize = CGSize(width: 1024, height: 1024)
 
-    /// A higher-resolution, on-device render used ONLY to crop faces for identity
-    /// matching, requested only for photos that already have a detected face.
-    /// Not cached (one transient use during analysis, and at ~1024px these are too
-    /// big to keep 400 of) and never downloads from iCloud, preserving the
-    /// thumbnail-first, on-device analysis posture.
+    /// A higher-resolution render used ONLY to crop faces for identity matching,
+    /// requested only for photos that already have a detected face. Not cached
+    /// (one transient use during analysis, and at ~1024px these are too big to keep
+    /// 400 of).
+    ///
+    /// Allows an iCloud fetch (`isNetworkAccessAllowed = true`): an optimized photo
+    /// whose on-device copy is too small can't otherwise yield usable face crops,
+    /// which silently disabled identity matching and merged different people with
+    /// the same head count. PHImageManager still serves a local copy when one is
+    /// adequate, so only not-downloaded face photos incur a fetch — the first scan
+    /// of a heavily-optimized library is slower as a result. The fetch pulls the
+    /// user's own photo from their own iCloud; nothing is sent anywhere.
     func faceSource(for asset: PHAsset) async -> UIImage? {
         let options = PHImageRequestOptions()
         options.deliveryMode = .highQualityFormat
         options.resizeMode = .exact
-        options.isNetworkAccessAllowed = false
+        options.isNetworkAccessAllowed = true
         options.isSynchronous = false
 
         return await withCheckedContinuation { continuation in
@@ -91,16 +98,13 @@ final class PhotoImageLoader: @unchecked Sendable {
                 targetSize: Self.faceSourceSize,
                 contentMode: .aspectFit,
                 options: options
-            ) { image, info in
+            ) { image, _ in
+                // .highQualityFormat delivers a single result; take whatever image
+                // arrives (even if flagged degraded) so we never hang, and resume
+                // nil only when none could be produced.
                 guard !didResume else { return }
-                let isDegraded = (info?[PHImageResultIsDegradedKey] as? Bool) ?? false
-                if let image, !isDegraded {
-                    didResume = true
-                    continuation.resume(returning: image)
-                } else if image == nil {
-                    didResume = true
-                    continuation.resume(returning: nil)
-                }
+                didResume = true
+                continuation.resume(returning: image)
             }
         }
     }

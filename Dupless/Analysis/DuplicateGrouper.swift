@@ -152,13 +152,19 @@ struct DuplicateGrouper {
     /// the same people whose face *count* flickers by one won't merge — an
     /// acceptable, safe-direction miss (both kept) versus a wrong merge.
     ///
-    /// Falls back to the equal-count check alone when either photo lacks prints
-    /// (Simulator, older cache); faceless photos (0 == 0) are unaffected.
-    nonisolated func samePeople(_ a: AnalyzedPhoto, _ b: AnalyzedPhoto) -> Bool {
+    /// When people are present this requires a per-face print on BOTH sides and
+    /// **fails safe** if either is missing: an absent print (an iCloud render that
+    /// couldn't be produced, the Simulator's device-only model) means we can't
+    /// confirm identity, so we do NOT merge — rather than trusting head count
+    /// alone, which merged 4 men with 4 women. Faceless photos (0 == 0) have no
+    /// identity to check and group on the visual signals as before.
+    nonisolated func samePeople(_ a: AnalyzedPhoto, _ b: AnalyzedPhoto,
+                                faceThreshold: Float = DuplicateGrouper.faceMatchThreshold) -> Bool {
         guard a.faceCount == b.faceCount else { return false }
-        guard !a.faceprints.isEmpty, !b.faceprints.isEmpty else { return true }
+        guard a.faceCount > 0 else { return true } // faceless → no identity to check
+        guard !a.faceprints.isEmpty, !b.faceprints.isEmpty else { return false } // fail safe
         return Self.faceprintsMatch(a.faceprints, b.faceprints,
-                                    threshold: Self.faceMatchThreshold,
+                                    threshold: faceThreshold,
                                     distance: faceDistance)
     }
 

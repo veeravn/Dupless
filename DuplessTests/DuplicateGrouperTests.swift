@@ -185,14 +185,16 @@ final class DuplicateGrouperTests: XCTestCase {
                       "Different group sizes at the same backdrop must not group")
     }
 
-    func testSameFaceCountGroupsWhenNearIdentical() {
-        // Same two people in near-identical frames (within the strict prefilter) →
-        // collapses via the strict path at balanced.
+    func testPeopleWithoutPrintsStaySeparate() {
+        // People present (faces > 0) but no face prints — an iCloud render that
+        // couldn't be produced, or the Simulator's device-only model. samePeople
+        // fails SAFE: don't merge on head count alone, even in near-identical
+        // frames. This is what keeps 4 men from 4 women once prints go missing.
         let photos = [
             photo("a", hash: keeperHash, date: sessionStart, faces: 2),
             photo("b", hash: poseHash, date: sessionStart.addingTimeInterval(60), faces: 2),
         ]
-        XCTAssertEqual(grouper.group(photos, sensitivity: .balanced).count, 1)
+        XCTAssertTrue(grouper.group(photos, sensitivity: .balanced).isEmpty)
     }
 
     func testCoupleVsCouplePlusFriendStaySeparate() {
@@ -315,10 +317,9 @@ final class DuplicateGrouperTests: XCTestCase {
             "1.0 > 0.5 → different person")
     }
 
-    func testMissingFaceprintsFallBackToCountGuard() {
-        // No prints on either side (Simulator / older cache) → samePeople falls
-        // back to equal face count, so near-identical frames still collapse via the
-        // strict path at balanced.
+    func testFacelessPhotosGroupOnVisualSignals() {
+        // No faces at all (landscapes) → no identity to check, so near-identical
+        // frames still collapse via the strict path at balanced.
         let photos = [
             photo("a", hash: keeperHash, date: sessionStart),
             photo("b", hash: poseHash, date: sessionStart.addingTimeInterval(60)),

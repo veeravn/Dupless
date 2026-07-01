@@ -11,7 +11,10 @@ struct PhotoAnalyzer {
     /// (the 256px-thumbnail prints couldn't distinguish people). v2: force a clean
     /// re-analysis on top of the Codable-decode fix and the hardened face-print
     /// render, so devices that cached empty/low-res prints under v1 recompute them.
-    static let analysisVersion = 2
+    /// v3: face render now allows an iCloud fetch, so records that cached EMPTY
+    /// prints for optimized (not-downloaded) photos under v2 recompute with real
+    /// prints.
+    static let analysisVersion = 3
 
     private let hashService = PerceptualHashService()
     private let featureService = VisionFeaturePrintService()
