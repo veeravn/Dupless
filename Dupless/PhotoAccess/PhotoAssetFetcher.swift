@@ -106,6 +106,11 @@ struct PhotoAssetFetcher {
         let result = PHAssetCollection.fetchAssetCollections(with: .album, subtype: .any, options: nil)
         var albums: [AlbumInfo] = []
         result.enumerateObjects { collection, _, _ in
+            // Shared Albums and My Photo Stream hold cloud-shared assets that can't
+            // be deleted, so scanning them for cleanup is a dead end (and produced
+            // a PHPhotosErrorChangeNotSupported on delete). Don't offer them.
+            let subtype = collection.assetCollectionSubtype
+            guard subtype != .albumCloudShared, subtype != .albumMyPhotoStream else { return }
             let count = PHAsset.fetchAssets(in: collection, options: countOptions).count
             guard count > 0 else { return }
             albums.append(
