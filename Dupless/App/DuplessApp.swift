@@ -28,6 +28,10 @@ struct DuplessApp: App {
     /// user declines tracking.
     private func startAds() async {
         _ = await ATTrackingManager.requestTrackingAuthorization()
+        // Registered test device: this device is served TEST ads in ALL builds
+        // (incl. Release/TestFlight), so tapping an ad here never counts as
+        // invalid activity. Only affects this device — real users get real ads.
+        MobileAds.shared.requestConfiguration.testDeviceIdentifiers = ["b3daf64a8372fa8c15c4602e8da882d6"]
         await MobileAds.shared.start()
         ads.preload()
     }
