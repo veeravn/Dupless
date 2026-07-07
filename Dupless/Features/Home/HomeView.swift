@@ -51,16 +51,9 @@ struct HomeView: View {
                     }
                 }
 
-                Section("Ask Dupless") {
-                    NaturalLanguageScanBar()
-                }
-
                 Section("Get started") {
                     NavigationLink(value: AppRoute.scanSetup) {
                         Label("Scan Photos", systemImage: "sparkle.magnifyingglass")
-                    }
-                    NavigationLink(value: AppRoute.droneBurstSetup) {
-                        Label("Drone / Burst Mode", systemImage: "airplane")
                     }
                     NavigationLink(value: AppRoute.review) {
                         Label("Review Duplicates", systemImage: "rectangle.stack.badge.minus")
@@ -90,10 +83,6 @@ struct HomeView: View {
                     Section { LimitedAccessBanner() }
                 }
 
-                Section("Ask Dupless") {
-                    NaturalLanguageScanBar()
-                }
-
                 if let interrupted = incompleteScans.first, !scanEngine.isScanning {
                     Section {
                         Button { path = [.resume] } label: { ResumeScanLabel(checkpoint: interrupted) }
@@ -103,7 +92,6 @@ struct HomeView: View {
 
                 Section("Get started") {
                     Label("Scan Photos", systemImage: "sparkle.magnifyingglass").tag(SidebarItem.scan)
-                    Label("Drone / Burst Mode", systemImage: "airplane").tag(SidebarItem.droneBurst)
                     Label("Review Duplicates", systemImage: "rectangle.stack.badge.minus")
                         .tag(SidebarItem.review)
                         .disabled(groups.isEmpty)

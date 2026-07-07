@@ -5,8 +5,6 @@ import SwiftUI
 /// before anything runs. Falls back to template parsing when the model is off.
 struct NaturalLanguageScanBar: View {
     @State private var model = NaturalLanguageScanModel()
-    @State private var showPaywall = false
-    @Environment(EntitlementStore.self) private var entitlements
 
     var body: some View {
         HStack(spacing: 8) {
@@ -44,16 +42,9 @@ struct NaturalLanguageScanBar: View {
                 .presentationDetents([.medium])
             }
         }
-        .sheet(isPresented: $showPaywall) {
-            PaywallView(highlight: .aiScan)
-        }
     }
 
     private func submit() {
-        guard entitlements.isPro else {
-            showPaywall = true
-            return
-        }
         Task { await model.submit() }
     }
 
