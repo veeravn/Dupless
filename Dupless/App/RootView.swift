@@ -181,7 +181,7 @@ private struct BannerAdView: UIViewRepresentable {
     #if DEBUG
     static let adUnitID = "ca-app-pub-3940256099942544/2934735716" // Google test banner
     #else
-    static let adUnitID = "ca-app-pub-6546029249563930/REPLACE_WITH_REAL_BANNER_ID" // TODO
+    static let adUnitID = "ca-app-pub-6546029249563930/6636159712"
     #endif
 
     /// Anchored adaptive banner for the current screen width (fills the width, ~50pt tall).
