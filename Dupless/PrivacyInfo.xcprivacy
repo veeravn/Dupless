@@ -2,33 +2,22 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<!-- Photo analysis is entirely on-device; photos never leave the device.
-	     The app shows Google AdMob interstitial ads, which track the device for
-	     advertising. VERIFY the tracking domains and collected data types below
-	     against Google's current AdMob privacy guidance and the GoogleMobileAds
-	     SDK's own bundled PrivacyInfo.xcprivacy before submitting. -->
+	<!-- This is the APP's own manifest. Photo analysis is entirely on-device and
+	     the app's own code collects no data and defines no tracking domains — so
+	     the collected-data / tracking-domain arrays are empty. The Google Mobile
+	     Ads (AdMob) SDK ships its OWN bundled PrivacyInfo.xcprivacy that declares
+	     the ad tracking domains and collected data types; Apple aggregates the two,
+	     so we do not (and should not) duplicate that list here — a hand-copied
+	     subset would just go stale. NSPrivacyTracking is true because the shipped
+	     app tracks (via AdMob) and shows the ATT prompt. The App Store "App
+	     Privacy" label separately declares the AdMob-collected data — see Google's
+	     data-disclosure guidance. -->
 	<key>NSPrivacyTracking</key>
 	<true/>
 	<key>NSPrivacyTrackingDomains</key>
-	<array>
-		<!-- Reconcile with Google's published AdMob tracking-domain list. -->
-		<string>googleads.g.doubleclick.net</string>
-	</array>
+	<array/>
 	<key>NSPrivacyCollectedDataTypes</key>
-	<array>
-		<dict>
-			<key>NSPrivacyCollectedDataType</key>
-			<string>NSPrivacyCollectedDataTypeDeviceID</string>
-			<key>NSPrivacyCollectedDataTypeLinked</key>
-			<false/>
-			<key>NSPrivacyCollectedDataTypeTracking</key>
-			<true/>
-			<key>NSPrivacyCollectedDataTypePurposes</key>
-			<array>
-				<string>NSPrivacyCollectedDataTypePurposeThirdPartyAdvertising</string>
-			</array>
-		</dict>
-	</array>
+	<array/>
 	<key>NSPrivacyAccessedAPITypes</key>
 	<array>
 		<dict>
