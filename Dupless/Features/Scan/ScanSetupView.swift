@@ -77,16 +77,19 @@ struct ScanSetupView: View {
         .navigationTitle("Scan Photos")
         .navigationBarTitleDisplayMode(.inline)
         .safeAreaInset(edge: .bottom) {
-            Button {
-                startScan = true
-            } label: {
-                Text("Start Scan")
-                    .frame(maxWidth: .infinity)
+            VStack(spacing: 0) {
+                BottomBannerAd()
+                Button {
+                    startScan = true
+                } label: {
+                    Text("Start Scan")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+                .disabled(!canStartScan)
+                .padding()
             }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
-            .disabled(!canStartScan)
-            .padding()
             .background(.bar)
         }
         .task(id: scope) {

@@ -162,3 +162,47 @@ extension InterstitialAdManager: FullScreenContentDelegate {
     }
 }
 
+// MARK: - Banner ad
+
+/// A bottom-anchored AdMob adaptive banner, sized to its own height and given a
+/// bar background — drop it into a screen's `.safeAreaInset(edge: .bottom)`.
+struct BottomBannerAd: View {
+    var body: some View {
+        BannerAdView()
+            .frame(height: BannerAdView.adSize.size.height)
+            .frame(maxWidth: .infinity)
+            .background(.bar)
+    }
+}
+
+/// SwiftUI wrapper around an AdMob adaptive banner. DEBUG uses Google's test
+/// banner unit (always fills, safe to tap); RELEASE uses the real one.
+private struct BannerAdView: UIViewRepresentable {
+    #if DEBUG
+    static let adUnitID = "ca-app-pub-3940256099942544/2934735716" // Google test banner
+    #else
+    static let adUnitID = "ca-app-pub-6546029249563930/REPLACE_WITH_REAL_BANNER_ID" // TODO
+    #endif
+
+    /// Anchored adaptive banner for the current screen width (fills the width, ~50pt tall).
+    static var adSize: AdSize {
+        currentOrientationAnchoredAdaptiveBanner(width: UIScreen.main.bounds.width)
+    }
+
+    func makeUIView(context: Context) -> BannerView {
+        let banner = BannerView(adSize: Self.adSize)
+        banner.adUnitID = Self.adUnitID
+        banner.rootViewController = Self.rootViewController()
+        banner.load(Request())
+        return banner
+    }
+
+    func updateUIView(_ uiView: BannerView, context: Context) {}
+
+    private static func rootViewController() -> UIViewController? {
+        let scene = UIApplication.shared.connectedScenes
+            .first { $0.activationState == .foregroundActive } as? UIWindowScene
+        return scene?.keyWindow?.rootViewController
+    }
+}
+

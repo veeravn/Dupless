@@ -77,6 +77,7 @@ struct HomeView: View {
             }
             .navigationTitle("Dupless")
             .navigationDestination(for: AppRoute.self, destination: destination)
+            .safeAreaInset(edge: .bottom) { BottomBannerAd() }
         }
     }
 
@@ -110,6 +111,7 @@ struct HomeView: View {
                 }
             }
             .navigationTitle("Dupless")
+            .safeAreaInset(edge: .bottom) { BottomBannerAd() }
         } detail: {
             NavigationStack(path: $path) {
                 WelcomeDetail()
