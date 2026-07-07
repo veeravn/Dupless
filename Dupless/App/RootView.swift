@@ -85,10 +85,11 @@ private struct LaunchView: View {
 @MainActor
 @Observable
 final class InterstitialAdManager: NSObject {
-    /// TODO: replace with your real interstitial ad unit ID from AdMob before
-    /// release. This is Google's public TEST id — safe in development, never a
-    /// live ad. The AdMob App ID goes in Info.plist as `GADApplicationIdentifier`.
-    private let adUnitID = "ca-app-pub-3940256099942544/4411468910"
+    /// Real AdMob interstitial ad unit ID. During development, register your test
+    /// device in AdMob so you're served TEST ads — tapping your own LIVE ads can
+    /// get the account flagged. The AdMob App ID is in Info.plist
+    /// (`GADApplicationIdentifier`).
+    private let adUnitID = "ca-app-pub-6546029249563930/4161316838"
 
     /// Don't present more than one interstitial per this interval.
     private let minInterval: TimeInterval = 3 * 60

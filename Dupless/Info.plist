@@ -21,9 +21,7 @@
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>GADApplicationIdentifier</key>
-	<!-- TODO: replace with your real AdMob App ID before release. This is
-	     Google's public sample App ID for development. -->
-	<string>ca-app-pub-3940256099942544~1458002511</string>
+	<string>ca-app-pub-6546029249563930~7659497156</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>LSApplicationCategoryType</key>
@@ -36,6 +34,10 @@
 	<string>Dupless scans your photo library on your device to find duplicate and similar photos so you can review and remove the ones you don't want. Your photos never leave your device.</string>
 	<key>NSUserTrackingUsageDescription</key>
 	<string>Allow tracking so the ads shown in Dupless can be more relevant to you.</string>
+	<key>SKAdNetworkItems</key>
+	<array>
+		<string>cstr6suwn9.skadnetwork</string>
+	</array>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
