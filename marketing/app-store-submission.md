@@ -40,12 +40,12 @@ duplicate,cleaner,storage,similar,burst,declutter,gallery,space,best shot,organi
 
 ### Description
 ```
-Dupless cleans up your photo library the private way — entirely on your device. It finds duplicates and near-identical shots, picks the best one in each set, and helps you safely remove the rest. No account, no cloud, no uploads.
+Dupless cleans up your photo library the private way — right on your device. It finds duplicate and near-identical shots, picks the best one in each set, and helps you safely remove the rest. No account, no cloud, and your photos are never uploaded.
 
 WHY DUPLESS
 • Private by design — your photos are analyzed right on your iPhone or iPad and never leave your device.
 • Nothing is deleted automatically. You review every group, and removed photos go to Recently Deleted, so they're always recoverable.
-• Built for the photos you actually take — portrait series, bursts, and drone sequences.
+• Fast, on-device analysis powered by Apple's Vision framework.
 
 FIND WHAT'S REDUNDANT
 • Detects exact duplicates and visually similar shots using on-device perceptual hashing and Apple's Vision framework.
@@ -55,12 +55,16 @@ FIND WHAT'S REDUNDANT
 KEEP THE BEST SHOT
 • Automatically ranks each group by sharpness, exposure, and resolution to recommend the keeper.
 • Tap "Why this one?" for a plain-language explanation of the pick.
-• Protects favorites, edited photos, Live Photos, hidden, shared, and photos with people.
+• Protects your favorites, edited photos, Live Photos, hidden, shared, and photos with people.
+
+REVIEW WITH CONFIDENCE
+• Swipe through groups, adjust what's selected, and move only what you choose to Recently Deleted.
+• Browse your library and revisit past results anytime.
 
 SIRI & SHORTCUTS
-• Start scans, review groups, and build albums by voice.
+• Start scans, review groups, and build a best-shots album by voice.
 
-Dupless is free, supported by ads. Your photos are analyzed entirely on your device and are never uploaded — no account required.
+Made for iPhone and iPad — reclaim space and tidy your library, on your terms.
 ```
 
 ### What's New (1.0)
