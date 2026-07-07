@@ -1,4 +1,6 @@
 import SwiftUI
+import UIKit
+import GoogleMobileAds
 
 /// Routes between onboarding (no access yet) and the main app (access granted).
 /// Shows a brief launch screen first so a cold start has visible feedback while
@@ -72,5 +74,65 @@ private struct LaunchView: View {
             withAnimation(.easeInOut(duration: 0.85)) { progress = 1 }
         }
     }
+}
+
+// MARK: - Ads (Google AdMob interstitial)
+
+/// Loads and shows an AdMob interstitial at natural breaks (after a scan
+/// completes), with a frequency cap so it isn't spammy. Fails open — any load or
+/// present failure is swallowed so ads never block the app. Lives here (rather
+/// than a new file) to avoid hand-editing the explicit-reference Xcode project.
+@MainActor
+@Observable
+final class InterstitialAdManager: NSObject {
+    /// TODO: replace with your real interstitial ad unit ID from AdMob before
+    /// release. This is Google's public TEST id — safe in development, never a
+    /// live ad. The AdMob App ID goes in Info.plist as `GADApplicationIdentifier`.
+    private let adUnitID = "ca-app-pub-3940256099942544/4411468910"
+
+    /// Don't present more than one interstitial per this interval.
+    private let minInterval: TimeInterval = 3 * 60
+    private var lastShown = Date.distantPast
+    private var interstitial: InterstitialAd?
+
+    /// Loads (or reloads) an interstitial for the next opportunity.
+    func preload() {
+        Task { await load() }
+    }
+
+    private func load() async {
+        do {
+            let ad = try await InterstitialAd.load(with: adUnitID, request: Request())
+            ad.fullScreenContentDelegate = self
+            interstitial = ad
+        } catch {
+            interstitial = nil // fail open; retry at the next opportunity
+        }
+    }
+
+    /// Presents an interstitial if one is loaded and the frequency cap allows.
+    func showIfReady() {
+        guard Date.now.timeIntervalSince(lastShown) >= minInterval,
+              let ad = interstitial,
+              let root = Self.topViewController() else { return }
+        lastShown = .now
+        interstitial = nil
+        ad.present(from: root)
+    }
+
+    private static func topViewController() -> UIViewController? {
+        let scene = UIApplication.shared.connectedScenes
+            .first { $0.activationState == .foregroundActive } as? UIWindowScene
+        var top = scene?.keyWindow?.rootViewController
+        while let presented = top?.presentedViewController { top = presented }
+        return top
+    }
+}
+
+extension InterstitialAdManager: FullScreenContentDelegate {
+    func adDidDismissFullScreenContent(_ ad: FullScreenPresentingAd) { preload() }
+
+    func ad(_ ad: FullScreenPresentingAd,
+            didFailToPresentFullScreenContentWithError error: Error) { preload() }
 }
 

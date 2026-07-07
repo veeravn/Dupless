@@ -8,6 +8,7 @@ import SwiftUI
 struct HomeView: View {
     @Environment(PhotoAuthorizationManager.self) private var authorization
     @Environment(ScanEngine.self) private var scanEngine
+    @Environment(InterstitialAdManager.self) private var ads
     @Environment(IntentRouter.self) private var router
     @Environment(\.modelContext) private var modelContext
     @Environment(\.horizontalSizeClass) private var sizeClass
@@ -31,6 +32,11 @@ struct HomeView: View {
             guard let route else { return }
             path = [route]
             router.route = nil
+        }
+        // Show an interstitial when a scan finishes (frequency-capped inside the
+        // manager). Never fires during the review/delete flow.
+        .onChange(of: scanEngine.isScanning) { wasScanning, isScanning in
+            if wasScanning && !isScanning { ads.showIfReady() }
         }
     }
 
