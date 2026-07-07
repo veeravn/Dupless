@@ -2,14 +2,33 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<!-- Dupless does not track users and collects no data. All photo
-	     analysis happens on-device; nothing is uploaded. -->
+	<!-- Photo analysis is entirely on-device; photos never leave the device.
+	     The app shows Google AdMob interstitial ads, which track the device for
+	     advertising. VERIFY the tracking domains and collected data types below
+	     against Google's current AdMob privacy guidance and the GoogleMobileAds
+	     SDK's own bundled PrivacyInfo.xcprivacy before submitting. -->
 	<key>NSPrivacyTracking</key>
-	<false/>
+	<true/>
 	<key>NSPrivacyTrackingDomains</key>
-	<array/>
+	<array>
+		<!-- Reconcile with Google's published AdMob tracking-domain list. -->
+		<string>googleads.g.doubleclick.net</string>
+	</array>
 	<key>NSPrivacyCollectedDataTypes</key>
-	<array/>
+	<array>
+		<dict>
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypeDeviceID</string>
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<true/>
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeThirdPartyAdvertising</string>
+			</array>
+		</dict>
+	</array>
 	<key>NSPrivacyAccessedAPITypes</key>
 	<array>
 		<dict>

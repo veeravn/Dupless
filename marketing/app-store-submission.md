@@ -57,17 +57,10 @@ KEEP THE BEST SHOT
 • Tap "Why this one?" for a plain-language explanation of the pick.
 • Protects favorites, edited photos, Live Photos, hidden, shared, and photos with people.
 
-ASK IN PLAIN LANGUAGE
-• Type a request like "scan last month, be conservative" — interpreted on-device by Apple Intelligence, with a reliable fallback when it's unavailable.
-• Optionally scope a scan to a place you name; matching looks up where photos were taken using Apple's location service. This is off by default and the only feature that sends anything off your device — and it sends coordinates only, never your photos.
-
-DRONE & BURST
-• Clusters photo sessions by time and location, finds redundant sequences, and preserves genuinely unique angles — including different drone altitudes.
-
 SIRI & SHORTCUTS
 • Start scans, review groups, and build albums by voice.
 
-Dupless has no ads, no trackers, no analytics SDKs, and no account. It just makes your library smaller, on your terms.
+Dupless is free, supported by ads. Your photos are analyzed entirely on your device and are never uploaded — no account required.
 ```
 
 ### What's New (1.0)
@@ -101,40 +94,31 @@ First release of Dupless:
 
 ## 4. App Privacy ("nutrition labels")
 
-**Recommended answer to "Do you or your third-party partners collect data from
-this app?": → No, "Data Not Collected".**
+**The app is ad-supported (Google AdMob), so you MUST declare data collection —
+"Data Not Collected" is no longer accurate and would be a misrepresentation.**
 
-### Why this is accurate
-Apple defines "collect" as transmitting data off the device in a way that lets
-**you (the developer) or your partners access it beyond what's needed to service
-the request in real time**. Against that definition:
+### What to declare
+AdMob collects a device advertising identifier and ad-interaction data. At minimum:
 
-- **No developer data collection of any kind.** No account, no analytics, no ads,
-  no third-party SDKs, and no server — confirmed: the codebase contains no
-  networking, analytics, or login code.
-- **Photos never leave the device.** All analysis (hashing, Vision, ranking,
-  on-device Apple Intelligence) runs locally.
-- **The one off-device call is reverse geocoding** photo coordinates via Apple's
-  **MapKit** (`MKReverseGeocodingRequest`). That data is processed by **Apple's
-  own framework** to service the request in real time; you never receive, store,
-  or reuse it, and Apple as the OS platform provider is not a "third-party
-  partner" you declare. It is also **opt-in and off by default**.
+> **Identifiers → Device ID** · Used for: **Third-Party Advertising** · **Used for
+> tracking: Yes** · Linked to identity: No.
 
-So there is no data type that meets Apple's "collection" bar for *you* to
-declare.
+AdMob may also collect Usage Data / Advertising Data / Diagnostics. Reconcile the
+full set against Google's current AdMob "Prepare for earnings/iOS" data-collection
+guidance and the **GoogleMobileAds SDK's bundled privacy manifest**, and declare
+those too. Because tracking is involved, the app must show Apple's **App Tracking
+Transparency** prompt, and `Dupless/PrivacyInfo.xcprivacy` declares
+`NSPrivacyTracking = true` with Google's tracking domains + the collected data
+types (already updated in the repo — verify the domain/data list before submit).
 
-### The one judgment call (so you can confirm)
-The only debatable item is the geocoding location lookup. The position above —
-that framework-only, real-time-serviced, developer-inaccessible data isn't
-developer "collection" — is consistent with Apple's guidance and is the accurate
-declaration. **If you prefer maximum caution**, you may instead declare:
+### Still on-device
+Your **photos never leave the device** — all analysis is local — and you (the
+developer) run no server or account. Only the AdMob SDK collects data, and only
+for advertising.
 
-> **Location → Coarse Location** · Used for: **App Functionality** · **Not** used
-> for tracking · **Not** linked to the user's identity.
-
-Either is defensible; "Data Not Collected" is the more accurate one given you
-never access the data. This is your legal declaration — pick the one you're
-comfortable signing.
+### Location
+The opt-in reverse-geocoding lookup lived in the "Ask Dupless" feature, which is
+**hidden in this build**, so it isn't reachable — no Location to declare.
 
 ---
 
@@ -174,7 +158,9 @@ inside MapKit) and no custom/proprietary cryptography. You can declare it
 - [x] **Privacy Policy URL is live** — `https://veeravn.github.io/cleanshots-site/privacy-policy.html` (GitHub Pages, public `cleanshots-site` repo)
 - [x] **Support URL is live** — `https://veeravn.github.io/cleanshots-site/`
 - [ ] Listing copy, keywords, categories, age rating entered **(your action)**
-- [ ] App Privacy answered ("Data Not Collected" recommended) **(your action)**
+- [ ] App Privacy answered — **declare data collection for Google AdMob** (Device
+      ID → Third-Party Advertising, used for tracking); NOT "Data Not Collected" **(your action)**
+- [ ] Age rating updated for ads (Apple asks about third-party ads) **(your action)**
 - [ ] Archive in Xcode (Release) and upload via Organizer **(your action)**
 - [ ] Export-compliance answer set / `ITSAppUsesNonExemptEncryption` configured
 

@@ -1,10 +1,11 @@
 # Dupless — Privacy Policy
 
-_Last updated: 2026-06-20_
+_Last updated: 2026-07-06_
 
-Dupless is built to clean up your photo library **without compromising your
-privacy**. The short version: your photos never leave your device, and we don't
-collect, transmit, or sell any of your data.
+Dupless cleans up your photo library while keeping your **photos** private: all
+photo analysis happens on your device and **your photos never leave it**. To keep
+the app free, Dupless shows ads served by **Google AdMob**, which uses an
+advertising identifier — you are asked for permission first and can decline.
 
 ## What we access
 
@@ -39,21 +40,31 @@ was taken, which uses **Apple's location (geocoding) service**.
 
 ## What we collect
 
-- **Nothing.** Dupless collects no personal data, no usage analytics, and no
-  identifiers. We do not track you across apps or websites.
-- The app stores small preferences (such as your default scan mode) and a local
-  cache of analysis results **on your device only**, to make scans faster and
-  resumable. This never leaves your device and is removed when you delete the app.
+- **We** (the developer) collect no personal data, no usage analytics of our own,
+  and run no server or account. Your photos, and the analysis of them, stay on
+  your device.
+- **Advertising:** the Google AdMob SDK collects a device advertising identifier
+  and related ad-interaction data to serve and measure ads. On first launch the
+  app asks, via Apple's App Tracking Transparency prompt, whether you allow
+  tracking; if you decline, ads are shown non-personalized.
+- The app also stores small preferences (such as your default scan mode) and a
+  local cache of analysis results **on your device only**, to make scans faster
+  and resumable. This never leaves your device and is removed when you delete the
+  app.
 
 ## Third parties
 
-- Dupless uses no third-party analytics, advertising, or tracking SDKs.
+- **Google AdMob** serves the in-app ads and collects the data described above.
+  Its use of that data is governed by Google's privacy policy
+  (https://policies.google.com/privacy).
 - On-device AI features use **Apple's Foundation Models**, which run locally. No
   prompt or photo data is sent to Apple or any other party for these features.
 
 ## Data sharing & sale
 
-- We do not share or sell any data, because we don't collect any.
+- We do not sell your data. The advertising identifier and ad-interaction data
+  described above are shared with Google AdMob solely to serve and measure ads.
+  Your photos are never shared with anyone.
 
 ## Children's privacy
 
