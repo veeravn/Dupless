@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import OSLog
 import GoogleMobileAds
 
 /// Routes between onboarding (no access yet) and the main app (access granted).
@@ -96,6 +97,11 @@ final class InterstitialAdManager: NSObject {
     private var lastShown = Date.distantPast
     private var interstitial: InterstitialAd?
 
+    /// Diagnostics — view in Xcode/Console with subsystem "Dupless", category
+    /// "ads". Logs load/present outcomes only (never user content). A "no fill"
+    /// load error is expected on a brand-new AdMob account until it starts serving.
+    private static let log = Logger(subsystem: "Dupless", category: "ads")
+
     /// Loads (or reloads) an interstitial for the next opportunity.
     func preload() {
         Task { await load() }
@@ -106,19 +112,31 @@ final class InterstitialAdManager: NSObject {
             let ad = try await InterstitialAd.load(with: adUnitID, request: Request())
             ad.fullScreenContentDelegate = self
             interstitial = ad
+            Self.log.info("interstitial loaded")
         } catch {
             interstitial = nil // fail open; retry at the next opportunity
+            Self.log.error("interstitial load failed: \(error.localizedDescription, privacy: .public)")
         }
     }
 
     /// Presents an interstitial if one is loaded and the frequency cap allows.
     func showIfReady() {
-        guard Date.now.timeIntervalSince(lastShown) >= minInterval,
-              let ad = interstitial,
-              let root = Self.topViewController() else { return }
+        guard Date.now.timeIntervalSince(lastShown) >= minInterval else {
+            Self.log.info("interstitial skipped: within frequency cap")
+            return
+        }
+        guard let ad = interstitial else {
+            Self.log.info("interstitial skipped: none loaded yet (see load failures above)")
+            return
+        }
+        guard let root = Self.topViewController() else {
+            Self.log.info("interstitial skipped: no root view controller")
+            return
+        }
         lastShown = .now
         interstitial = nil
         ad.present(from: root)
+        Self.log.info("interstitial presented")
     }
 
     private static func topViewController() -> UIViewController? {
@@ -134,6 +152,9 @@ extension InterstitialAdManager: FullScreenContentDelegate {
     func adDidDismissFullScreenContent(_ ad: FullScreenPresentingAd) { preload() }
 
     func ad(_ ad: FullScreenPresentingAd,
-            didFailToPresentFullScreenContentWithError error: Error) { preload() }
+            didFailToPresentFullScreenContentWithError error: Error) {
+        Self.log.error("interstitial present failed: \(error.localizedDescription, privacy: .public)")
+        preload()
+    }
 }
 
