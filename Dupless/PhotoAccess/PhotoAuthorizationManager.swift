@@ -22,6 +22,13 @@ final class PhotoAuthorizationManager {
 
     private(set) var status: Status
 
+    /// Registered for the app's lifetime. Its sole job is to keep PhotoKit's
+    /// per-process library snapshot fresh — without a registered change observer,
+    /// `PHAsset.fetchAssets` returns a stale snapshot, so photos captured after
+    /// launch don't appear in a scan (recent OR date-range) until the system
+    /// eventually refreshes the process. This is the "rescan misses new photos" fix.
+    private let libraryObserver = PhotoLibraryObserver()
+
     init() {
         status = Self.map(PHPhotoLibrary.authorizationStatus(for: .readWrite))
     }
@@ -54,4 +61,20 @@ final class PhotoAuthorizationManager {
         @unknown default: return .denied
         }
     }
+}
+
+/// Registers as a `PHPhotoLibraryChangeObserver` so PhotoKit keeps this process's
+/// library snapshot up to date. Registration alone is the fix — a fresh
+/// `PHAsset.fetchAssets` then reflects photos added since launch. The callback is
+/// intentionally a no-op: the scan re-fetches on demand, so there's no held
+/// `PHFetchResult` to update here.
+private final class PhotoLibraryObserver: NSObject, PHPhotoLibraryChangeObserver {
+    override init() {
+        super.init()
+        PHPhotoLibrary.shared().register(self)
+    }
+
+    deinit { PHPhotoLibrary.shared().unregisterChangeObserver(self) }
+
+    func photoLibraryDidChange(_ changeInstance: PHChange) {}
 }
