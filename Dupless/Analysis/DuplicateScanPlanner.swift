@@ -10,7 +10,7 @@ struct DuplicateScanPlanner: Sendable {
 
     func plan(_ analyses: [CachedAnalysis]) -> [ScanGroupResult] {
         let groups = DuplicateGrouper().group(analyses.map { $0.toAnalyzedPhoto() }, sensitivity: sensitivity)
-        let ranker = BestShotRanker()
+        let ranker = BestShotRanker(policy: AppSettings.protectionPolicy)
         let byID = Dictionary(uniqueKeysWithValues: analyses.map { ($0.id, $0) })
 
         return groups.map { group in

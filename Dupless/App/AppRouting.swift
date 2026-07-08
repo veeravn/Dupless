@@ -47,6 +47,7 @@ final class IntentRouter {
 enum AppSettings {
     private static let defaultModeKey = "defaultDedupeMode"
     private static let locationMatchingKey = "locationMatchingEnabled"
+    static let protectLivePhotosKey = "protectLivePhotos"
 
     static var defaultSensitivity: SimilaritySensitivity {
         get {
@@ -62,5 +63,21 @@ enum AppSettings {
     static var locationMatchingEnabled: Bool {
         get { UserDefaults.standard.bool(forKey: locationMatchingKey) }
         set { UserDefaults.standard.set(newValue, forKey: locationMatchingKey) }
+    }
+
+    /// Whether Live Photos are protected from cleanup (like favorites/edited, but
+    /// user-toggleable). On by default; turn off to let Live Photos be selected for
+    /// removal. `object(...) ?? true` so an unset value defaults to protected.
+    static var protectLivePhotos: Bool {
+        get { UserDefaults.standard.object(forKey: protectLivePhotosKey) as? Bool ?? true }
+        set { UserDefaults.standard.set(newValue, forKey: protectLivePhotosKey) }
+    }
+
+    /// The active protection policy: all hard protections on, with Live Photo
+    /// protection following the user's `protectLivePhotos` setting.
+    static var protectionPolicy: ProtectionPolicy {
+        var policy = ProtectionPolicy.default
+        policy.protectLivePhotos = protectLivePhotos
+        return policy
     }
 }
