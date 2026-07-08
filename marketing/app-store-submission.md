@@ -72,8 +72,7 @@ Made for iPhone and iPad — reclaim space and tidy your library, on your terms.
 First release of Dupless:
 • On-device duplicate and similar-photo detection
 • Best-shot ranking with plain-language explanations
-• Natural-language scans with Apple Intelligence
-• Drone/Burst session cleanup that protects unique angles
+• Protect favorites, edited photos, and Live Photos (each toggleable)
 • Siri & Shortcuts support
 • Optional, off-by-default place-name scan matching
 ```
@@ -133,10 +132,6 @@ Dupless is a fully on-device photo-deduplication app. No account or login is req
 
 To test: grant Photos access when prompted. The app scans the library for duplicate and similar photos and presents them for review. Nothing is deleted without explicit user action; removals go to Recently Deleted.
 
-"Ask Dupless" interprets a typed request using on-device Apple Intelligence (Foundation Models); when unavailable it falls back to deterministic keyword parsing, so the feature works on all supported devices.
-
-Optional place-name scan scoping is OFF by default. When a user enables it for a scan, the app reverse-geocodes photo coordinates via MapKit (MKReverseGeocodingRequest) to match a named place. Only coordinates are sent to Apple's location service — never photos. This is the only off-device transmission and is disclosed in the privacy policy.
-
 Photo-library permission strings explain both read access (for scanning) and add access (for optionally saving best shots to a new album).
 ```
 
@@ -156,9 +151,8 @@ inside MapKit) and no custom/proprietary cryptography. You can declare it
 ## 7. Pre-submission checklist
 
 - [ ] **App icon** — 1024×1024 present in the asset catalog ✓ (confirm it has no alpha/transparency)
-- [ ] **iPhone 6.9" screenshots** — 7 captured in `marketing/screenshots/iphone-6.9/` ✓
-- [ ] **iPad 13" screenshots** — 3 captured in `marketing/screenshots/ipad-13/` ✓
-- [x] **Onboarding screenshot refreshed** — `iphone-6.9/1-onboarding.png` re-captured with the current "Find duplicates" title.
+- [x] **iPhone 6.9" screenshots** — 7 captured in `marketing/screenshots/iphone-6.9/` ✓ (re-captured 2026-07-08 against current build: dropped "Ask Dupless" bar and Drone/Burst — both hidden Pro features per `abbf76e` — picked up the AdMob banner and the new Protect Live Photos toggle, and replaced the Drone/Burst slot with Browse Photos)
+- [x] **iPad 13" screenshots** — 3 captured in `marketing/screenshots/ipad-13/` ✓ (re-captured 2026-07-08, same reasons)
 - [x] **Privacy Policy URL is live** — `https://veeravn.github.io/cleanshots-site/privacy-policy.html` (GitHub Pages, public `cleanshots-site` repo)
 - [x] **Support URL is live** — `https://veeravn.github.io/cleanshots-site/`
 - [ ] Listing copy, keywords, categories, age rating entered **(your action)**
