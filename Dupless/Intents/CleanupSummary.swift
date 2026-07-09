@@ -47,7 +47,7 @@ enum KeeperExplanation {
         )) ?? []
         let cached = Dictionary(uniqueKeysWithValues: records.map { ($0.assetLocalIdentifier, $0.cachedAnalysis) })
         let rankables = group.memberIdentifiers.compactMap { cached[$0]?.rankablePhoto }
-        let ranking = BestShotRanker().rank(rankables)
+        let ranking = BestShotRanker(policy: AppSettings.protectionPolicy).rank(rankables)
         let badges = ranking.badges[keeperID] ?? []
         return RecommendationText.keeperSummary(badges: badges)
     }

@@ -97,7 +97,7 @@ struct DuplicateGroupDetailView: View {
         assets = AssetResolver.assets(for: group.memberIdentifiers)
         let cached = cachedAnalyses(for: group.memberIdentifiers)
         let rankables = group.memberIdentifiers.compactMap { cached[$0]?.rankablePhoto }
-        let result = BestShotRanker().rank(rankables)
+        let result = BestShotRanker(policy: AppSettings.protectionPolicy).rank(rankables)
         ranking = result
         // Protection-aware default: pre-select only the suggested (non-protected) removals.
         removalSelection = Set(result.suggestedRemovalIdentifiers)

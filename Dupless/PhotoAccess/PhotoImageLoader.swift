@@ -66,6 +66,49 @@ final class PhotoImageLoader: @unchecked Sendable {
         return image
     }
 
+    /// Edge for the face-identity render. Larger than the analysis thumbnail so a
+    /// face in a group shot is ~80–200px rather than ~15–40px — enough for the
+    /// per-face feature print to actually distinguish people (the 256px thumbnail
+    /// can't; measured).
+    static let faceSourceSize = CGSize(width: 1024, height: 1024)
+
+    /// A higher-resolution render used ONLY to crop faces for identity matching,
+    /// requested only for photos that already have a detected face. Not cached
+    /// (one transient use during analysis, and at ~1024px these are too big to keep
+    /// 400 of).
+    ///
+    /// Allows an iCloud fetch (`isNetworkAccessAllowed = true`): an optimized photo
+    /// whose on-device copy is too small can't otherwise yield usable face crops,
+    /// which silently disabled identity matching and merged different people with
+    /// the same head count. PHImageManager still serves a local copy when one is
+    /// adequate, so only not-downloaded face photos incur a fetch — the first scan
+    /// of a heavily-optimized library is slower as a result. The fetch pulls the
+    /// user's own photo from their own iCloud; nothing is sent anywhere.
+    func faceSource(for asset: PHAsset) async -> UIImage? {
+        let options = PHImageRequestOptions()
+        options.deliveryMode = .highQualityFormat
+        options.resizeMode = .exact
+        options.isNetworkAccessAllowed = true
+        options.isSynchronous = false
+
+        return await withCheckedContinuation { continuation in
+            var didResume = false
+            imageManager.requestImage(
+                for: asset,
+                targetSize: Self.faceSourceSize,
+                contentMode: .aspectFit,
+                options: options
+            ) { image, _ in
+                // .highQualityFormat delivers a single result; take whatever image
+                // arrives (even if flagged degraded) so we never hang, and resume
+                // nil only when none could be produced.
+                guard !didResume else { return }
+                didResume = true
+                continuation.resume(returning: image)
+            }
+        }
+    }
+
     /// Larger, display-quality image for the full-screen inspector. Unlike
     /// `thumbnail`, this allows an iCloud download — the user explicitly opened
     /// the photo for a closer look — and isn't cached, to avoid evicting the

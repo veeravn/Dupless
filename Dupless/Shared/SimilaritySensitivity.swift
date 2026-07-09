@@ -58,6 +58,16 @@ enum SimilaritySensitivity: String, CaseIterable, Identifiable, Sendable {
         }
     }
 
+    /// Whether this sensitivity runs the relaxed same-session pass at all — the
+    /// looser grouping that bypasses the Hamming prefilter to collapse a
+    /// "same backdrop, different pose" series. OFF for conservative and balanced,
+    /// so the default only collapses genuine near-duplicates/bursts (the strict
+    /// path) and distinct moments at the same place stay separate keepsakes; ON
+    /// only for aggressive, for users who explicitly want same-place series merged.
+    /// (Testers consistently flagged the relaxed pass merging different moments —
+    /// same people, same spot — that they wanted kept apart.)
+    var groupsSameSessionPoses: Bool { self == .aggressive }
+
     /// Photos taken within this window of each other are treated as one shooting
     /// session for the relaxed-grouping pass.
     static let sessionWindow: TimeInterval = 600

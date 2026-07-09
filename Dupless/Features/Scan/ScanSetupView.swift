@@ -22,6 +22,7 @@ struct ScanSetupView: View {
 
     @State private var includeScreenshots = true
     @State private var excludeFavorites = true
+    @AppStorage(AppSettings.protectLivePhotosKey) private var protectLivePhotos = true
     @State private var sensitivity: SimilaritySensitivity = AppSettings.defaultSensitivity
 
     @State private var startScan = false
@@ -52,9 +53,14 @@ struct ScanSetupView: View {
                 }
             }
 
-            Section("Options") {
+            Section {
                 Toggle("Include screenshots", isOn: $includeScreenshots)
                 Toggle("Protect favorites", isOn: $excludeFavorites)
+                Toggle("Protect Live Photos", isOn: $protectLivePhotos)
+            } header: {
+                Text("Options")
+            } footer: {
+                Text("Protected Live Photos are grouped but never pre-selected for removal. Turn off to allow cleaning up duplicate Live Photos.")
             }
 
             Section {
@@ -77,16 +83,19 @@ struct ScanSetupView: View {
         .navigationTitle("Scan Photos")
         .navigationBarTitleDisplayMode(.inline)
         .safeAreaInset(edge: .bottom) {
-            Button {
-                startScan = true
-            } label: {
-                Text("Start Scan")
-                    .frame(maxWidth: .infinity)
+            VStack(spacing: 0) {
+                BottomBannerAd()
+                Button {
+                    startScan = true
+                } label: {
+                    Text("Start Scan")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+                .disabled(!canStartScan)
+                .padding()
             }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
-            .disabled(!canStartScan)
-            .padding()
             .background(.bar)
         }
         .task(id: scope) {

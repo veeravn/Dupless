@@ -8,6 +8,7 @@ import SwiftUI
 struct HomeView: View {
     @Environment(PhotoAuthorizationManager.self) private var authorization
     @Environment(ScanEngine.self) private var scanEngine
+    @Environment(InterstitialAdManager.self) private var ads
     @Environment(IntentRouter.self) private var router
     @Environment(\.modelContext) private var modelContext
     @Environment(\.horizontalSizeClass) private var sizeClass
@@ -32,6 +33,11 @@ struct HomeView: View {
             path = [route]
             router.route = nil
         }
+        // Show an interstitial when a scan finishes (frequency-capped inside the
+        // manager). Never fires during the review/delete flow.
+        .onChange(of: scanEngine.isScanning) { wasScanning, isScanning in
+            if wasScanning && !isScanning { ads.showIfReady() }
+        }
     }
 
     // MARK: - iPhone (unchanged)
@@ -51,16 +57,9 @@ struct HomeView: View {
                     }
                 }
 
-                Section("Ask Dupless") {
-                    NaturalLanguageScanBar()
-                }
-
                 Section("Get started") {
                     NavigationLink(value: AppRoute.scanSetup) {
                         Label("Scan Photos", systemImage: "sparkle.magnifyingglass")
-                    }
-                    NavigationLink(value: AppRoute.droneBurstSetup) {
-                        Label("Drone / Burst Mode", systemImage: "airplane")
                     }
                     NavigationLink(value: AppRoute.review) {
                         Label("Review Duplicates", systemImage: "rectangle.stack.badge.minus")
@@ -78,6 +77,7 @@ struct HomeView: View {
             }
             .navigationTitle("Dupless")
             .navigationDestination(for: AppRoute.self, destination: destination)
+            .safeAreaInset(edge: .bottom) { BottomBannerAd() }
         }
     }
 
@@ -90,10 +90,6 @@ struct HomeView: View {
                     Section { LimitedAccessBanner() }
                 }
 
-                Section("Ask Dupless") {
-                    NaturalLanguageScanBar()
-                }
-
                 if let interrupted = incompleteScans.first, !scanEngine.isScanning {
                     Section {
                         Button { path = [.resume] } label: { ResumeScanLabel(checkpoint: interrupted) }
@@ -103,7 +99,6 @@ struct HomeView: View {
 
                 Section("Get started") {
                     Label("Scan Photos", systemImage: "sparkle.magnifyingglass").tag(SidebarItem.scan)
-                    Label("Drone / Burst Mode", systemImage: "airplane").tag(SidebarItem.droneBurst)
                     Label("Review Duplicates", systemImage: "rectangle.stack.badge.minus")
                         .tag(SidebarItem.review)
                         .disabled(groups.isEmpty)
@@ -116,6 +111,7 @@ struct HomeView: View {
                 }
             }
             .navigationTitle("Dupless")
+            .safeAreaInset(edge: .bottom) { BottomBannerAd() }
         } detail: {
             NavigationStack(path: $path) {
                 WelcomeDetail()

@@ -43,24 +43,27 @@ struct DuplicateGrouper {
                     // pairs skip the prefilter and get a real feature-distance check
                     // — otherwise a same-backdrop series never even reaches it.
                     guard withinPrefilter || session else { continue }
-                    // Photos with clearly different numbers of people are different
-                    // compositions — "just the couple" vs "the whole family" at the
-                    // same party backdrop — not duplicates. Never merge them,
-                    // however similar the background looks.
-                    guard compatibleComposition(a, b) else { continue }
+                    // Photos showing different people are different compositions —
+                    // "just the couple" vs "the whole family", or two family units
+                    // taking turns at the same party backdrop — not duplicates.
+                    // Never merge them, however similar the background, the head
+                    // count, or the overall color. Applies to BOTH the strict and
+                    // the relaxed paths (same-backdrop look-alikes pass the strict
+                    // path too).
+                    guard samePeople(a, b) else { continue }
                     let d = distance(a, b)
                     if withinPrefilter, d <= sensitivity.featureDistanceThreshold {
                         unionFind.union(indices[i], indices[j])
-                    } else if session, d <= sensitivity.sessionRelaxedThreshold,
-                              similarColor(a, b) {
-                        // Same shooting session: a pose change against the same
-                        // backdrop still groups, so the series collapses to one
-                        // keeper instead of staying ungrouped. The color gate keeps
-                        // this relaxed merge from swallowing a same-backdrop shot
-                        // whose subject changed color (e.g. an outfit change) — the
-                        // grayscale hash and feature print under-weight that, so the
-                        // coarse color histogram catches it. Gating only this path
-                        // never weakens the strict true-duplicate match above.
+                    } else if sensitivity.groupsSameSessionPoses, session,
+                              d <= sensitivity.sessionRelaxedThreshold, similarColor(a, b) {
+                        // Aggressive only: a pose change against the same backdrop
+                        // collapses the series to one keeper. OFF by default —
+                        // testers wanted distinct moments at the same place kept
+                        // apart, so conservative/balanced group only near-identical
+                        // frames via the strict path above. The color gate further
+                        // keeps this merge from swallowing a same-backdrop shot
+                        // whose subject changed color (an outfit change), which the
+                        // grayscale hash and feature print under-weight.
                         unionFind.union(indices[i], indices[j])
                     }
                 }
@@ -101,15 +104,17 @@ struct DuplicateGrouper {
         let d = distance(a, b)
         guard session || d <= 1.0 else { return }
         let gap = a.captureDate.flatMap { ca in b.captureDate.map { abs(ca.timeIntervalSince($0)) } } ?? -1
-        let composition = compatibleComposition(a, b)
+        let people = samePeople(a, b)
         let color = colorSimilarity(a, b) ?? -1
-        let grouped = composition
+        let face = worstFaceMatch(a, b) ?? -1
+        let grouped = people
             && ((withinPrefilter && d <= sensitivity.featureDistanceThreshold)
-                || (session && d <= sensitivity.sessionRelaxedThreshold && similarColor(a, b)))
+                || (sensitivity.groupsSameSessionPoses && session
+                    && d <= sensitivity.sessionRelaxedThreshold && similarColor(a, b)))
         let line = String(
-            format: "%@ × %@  hamming=%d  feat=%.3f  gapSec=%.0f  faces=%d/%d  color=%.2f  session=%@  prefilter=%@  → %@",
+            format: "%@ × %@  hamming=%d  feat=%.3f  gapSec=%.0f  faces=%d/%d  prints=%d/%d  face=%.3f  color=%.2f  session=%@  prefilter=%@  → %@",
             String(a.id.prefix(6)), String(b.id.prefix(6)), hamming, d, gap,
-            a.faceCount, b.faceCount, color,
+            a.faceCount, b.faceCount, a.faceprints.count, b.faceprints.count, face, color,
             session ? "Y" : "N", withinPrefilter ? "Y" : "N", grouped ? "GROUP" : "skip")
         Self.log.debug("\(line, privacy: .public)")
     }
@@ -133,18 +138,81 @@ struct DuplicateGrouper {
         return true
     }
 
-    /// Two photos whose detected face counts differ by more than
-    /// `maxFaceCountDelta` are treated as distinct compositions and never grouped,
-    /// even when visually near-identical. A ±1 difference is tolerated to absorb
-    /// face-detection flicker across a burst of the same people; a larger gap
-    /// (a couple vs a crowd) blocks grouping. Photos with no detected faces
-    /// (0 vs 0, e.g. landscapes) are unaffected.
-    nonisolated func compatibleComposition(_ a: AnalyzedPhoto, _ b: AnalyzedPhoto) -> Bool {
-        abs(a.faceCount - b.faceCount) <= Self.maxFaceCountDelta
+    /// Whether two photos show the *same set of people*, so they're safe to merge.
+    /// Requires an **equal** face count, then — when both photos carry per-face
+    /// prints — that every face on one side has a near-match on the other. This
+    /// keeps deliberately different compositions apart even when the backdrop,
+    /// head count, and overall color all match: not just "a couple vs a crowd"
+    /// (unequal counts), but "the couple" vs "the couple + a friend" (a subset),
+    /// and two same-size but different family units taking turns at one backdrop.
+    /// All of those are distinct keepsakes, not duplicates.
+    ///
+    /// Equal-count (rather than ±1) is deliberate: adding or dropping a person is
+    /// a different photo the user wants to keep. The cost is that a true burst of
+    /// the same people whose face *count* flickers by one won't merge — an
+    /// acceptable, safe-direction miss (both kept) versus a wrong merge.
+    ///
+    /// When people are present this requires a per-face print on BOTH sides and
+    /// **fails safe** if either is missing: an absent print (an iCloud render that
+    /// couldn't be produced, the Simulator's device-only model) means we can't
+    /// confirm identity, so we do NOT merge — rather than trusting head count
+    /// alone, which merged 4 men with 4 women. Faceless photos (0 == 0) have no
+    /// identity to check and group on the visual signals as before.
+    nonisolated func samePeople(_ a: AnalyzedPhoto, _ b: AnalyzedPhoto,
+                                faceThreshold: Float = DuplicateGrouper.faceMatchThreshold) -> Bool {
+        guard a.faceCount == b.faceCount else { return false }
+        guard a.faceCount > 0 else { return true } // faceless → no identity to check
+        guard !a.faceprints.isEmpty, !b.faceprints.isEmpty else { return false } // fail safe
+        return Self.faceprintsMatch(a.faceprints, b.faceprints,
+                                    threshold: faceThreshold,
+                                    distance: faceDistance)
     }
 
-    /// Max difference in detected face count for two photos to still be groupable.
-    static let maxFaceCountDelta = 1
+    /// Pure people-set match: every face on the smaller side must have some face
+    /// on the larger side within `threshold`. `distance` is injected so the set
+    /// logic is unit-testable without the device-only feature-print model.
+    nonisolated static func faceprintsMatch(_ x: [Data], _ y: [Data], threshold: Float,
+                                            distance: (Data, Data) -> Float) -> Bool {
+        let (fewer, more) = x.count <= y.count ? (x, y) : (y, x)
+        for face in fewer where (more.map { distance(face, $0) }.min() ?? .greatestFiniteMagnitude) > threshold {
+            return false
+        }
+        return true
+    }
+
+    /// Feature-print distance between two archived face crops; large when either
+    /// can't be unarchived/compared, so an uncomparable pair never counts as a
+    /// match.
+    nonisolated func faceDistance(_ a: Data, _ b: Data) -> Float {
+        guard let oa = FeaturePrintArchive.unarchive(a), let ob = FeaturePrintArchive.unarchive(b),
+              let d = featureService.distance(oa, ob) else { return .greatestFiniteMagnitude }
+        return d
+    }
+
+    /// The deciding face-match distance for a pair — the *worst* of the smaller
+    /// side's best matches. Below `faceMatchThreshold` ⇒ same people. Surfaced in
+    /// the DEBUG log so the threshold can be tuned against real photos. Nil when
+    /// either photo lacks prints.
+    nonisolated func worstFaceMatch(_ a: AnalyzedPhoto, _ b: AnalyzedPhoto) -> Float? {
+        guard !a.faceprints.isEmpty, !b.faceprints.isEmpty else { return nil }
+        let (fewer, more) = a.faceprints.count <= b.faceprints.count
+            ? (a.faceprints, b.faceprints) : (b.faceprints, a.faceprints)
+        var worst: Float = 0
+        for face in fewer {
+            worst = max(worst, more.map { faceDistance(face, $0) }.min() ?? .greatestFiniteMagnitude)
+        }
+        return worst
+    }
+
+    /// Max per-face feature-print distance for two face crops to count as the same
+    /// person. Set from measured data (`scratchpad/face-distance-diag.swift` over
+    /// real photos): at the ~1024px face-crop resolution, same-person pairs land
+    /// ≈0.32–0.56 and different-person pairs ≈0.60–0.83, so 0.55 sits in the gap.
+    /// Crops MUST come from a high-res render — at the 256px analysis thumbnail
+    /// faces are ~15–40px and the two populations overlap completely, which is why
+    /// an earlier 0.7-at-256px attempt still over-grouped. Tunable from the DEBUG
+    /// `CLEANSHOTS_GROUP_LOG` `face=` field.
+    static let faceMatchThreshold: Float = 0.55
 
     /// Whether two photos are close enough in overall color for the relaxed
     /// same-session merge. Returns true when either lacks a color signature (older

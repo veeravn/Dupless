@@ -1,5 +1,7 @@
 import SwiftUI
-import StoreKit
+import UIKit
+import OSLog
+import GoogleMobileAds
 
 /// Routes between onboarding (no access yet) and the main app (access granted).
 /// Shows a brief launch screen first so a cold start has visible feedback while
@@ -75,310 +77,132 @@ private struct LaunchView: View {
     }
 }
 
-// MARK: - Monetization (StoreKit 2)
-//
-// Dupless Pro unlocks the AI "Ask Dupless" scans and Drone/Burst mode. It's sold
-// as EITHER a one-time lifetime unlock OR an annual subscription — the user picks
-// on the paywall. Everything runs through StoreKit on-device (no server, nothing
-// collected), so the "Data Not Collected" privacy posture is preserved.
-//
-// This section can later be split into its own `Monetization/` group by dragging
-// the types into new files in Xcode (which updates the project file). It lives
-// here for now to avoid hand-editing the explicit-reference Xcode project.
+// MARK: - Ads (Google AdMob interstitial)
 
-/// A feature gated behind Dupless Pro.
-enum ProFeature: String, Identifiable, CaseIterable {
-    case aiScan
-    case droneBurst
-
-    var id: String { rawValue }
-
-    var title: String {
-        switch self {
-        case .aiScan: return "Ask Dupless"
-        case .droneBurst: return "Drone & Burst Mode"
-        }
-    }
-
-    var systemImage: String {
-        switch self {
-        case .aiScan: return "sparkles"
-        case .droneBurst: return "airplane"
-        }
-    }
-
-    var blurb: String {
-        switch self {
-        case .aiScan:
-            return "Describe what to scan in plain language, and scope a scan to a place you name — powered by on-device Apple Intelligence."
-        case .droneBurst:
-            return "Clean up drone and burst sequences while protecting genuinely unique angles and altitudes."
-        }
-    }
-}
-
-/// Pure gate decision, kept separate from StoreKit so it's trivially testable.
-struct ProAccess {
-    let isPro: Bool
-    func isLocked(_ feature: ProFeature) -> Bool { !isPro }
-}
-
-/// Owns the StoreKit 2 products and the Pro entitlement; an app-lifetime
-/// singleton injected via the environment. On-device only — entitlements are
-/// verified locally and nothing is sent to any server we control.
+/// Loads and shows an AdMob interstitial at natural breaks (after a scan
+/// completes), with a frequency cap so it isn't spammy. Fails open — any load or
+/// present failure is swallowed so ads never block the app. Lives here (rather
+/// than a new file) to avoid hand-editing the explicit-reference Xcode project.
 @MainActor
 @Observable
-final class EntitlementStore {
-    enum ProductID {
-        static let lifetime = "com.vnaidu.Dupless.pro.lifetime"
-        static let annual = "com.vnaidu.Dupless.pro.annual"
-        static let all = [lifetime, annual]
+final class InterstitialAdManager: NSObject {
+    /// Interstitial ad unit ID. DEBUG builds use Google's public TEST unit (always
+    /// fills with a labeled test ad, safe to tap) so the integration is verifiable
+    /// from Xcode even before the AdMob account starts serving; RELEASE builds use
+    /// the real unit. The AdMob App ID is in Info.plist (`GADApplicationIdentifier`).
+    #if DEBUG
+    private let adUnitID = "ca-app-pub-3940256099942544/4411468910"
+    #else
+    private let adUnitID = "ca-app-pub-6546029249563930/4161316838"
+    #endif
+
+    /// Don't present more than one interstitial per this interval.
+    private let minInterval: TimeInterval = 3 * 60
+    private var lastShown = Date.distantPast
+    private var interstitial: InterstitialAd?
+
+    /// Diagnostics — view in Xcode/Console with subsystem "Dupless", category
+    /// "ads". Logs load/present outcomes only (never user content). A "no fill"
+    /// load error is expected on a brand-new AdMob account until it starts serving.
+    private static let log = Logger(subsystem: "Dupless", category: "ads")
+
+    /// Loads (or reloads) an interstitial for the next opportunity.
+    func preload() {
+        Task { await load() }
     }
 
-    private(set) var isPro = false
-    private(set) var lifetime: Product?
-    private(set) var annual: Product?
-    private(set) var isLoadingProducts = false
-    private(set) var loadFailed = false
-    private(set) var purchaseInFlight = false
-
-    var access: ProAccess { ProAccess(isPro: isPro) }
-
-    init() {
-        listenForTransactions()
-        Task { await refresh() }
-    }
-
-    func refresh() async {
-        await loadProducts()
-        await updateEntitlement()
-    }
-
-    func loadProducts() async {
-        isLoadingProducts = true
-        loadFailed = false
-        defer { isLoadingProducts = false }
+    private func load() async {
         do {
-            let products = try await Product.products(for: ProductID.all)
-            lifetime = products.first { $0.id == ProductID.lifetime }
-            annual = products.first { $0.id == ProductID.annual }
-            loadFailed = lifetime == nil && annual == nil
+            let ad = try await InterstitialAd.load(with: adUnitID, request: Request())
+            ad.fullScreenContentDelegate = self
+            interstitial = ad
+            Self.log.info("interstitial loaded")
         } catch {
-            loadFailed = true
+            interstitial = nil // fail open; retry at the next opportunity
+            Self.log.error("interstitial load failed: \(error.localizedDescription, privacy: .public)")
         }
     }
 
-    func updateEntitlement() async {
-        var pro = false
-        for await result in Transaction.currentEntitlements {
-            guard case .verified(let transaction) = result else { continue }
-            if ProductID.all.contains(transaction.productID), transaction.revocationDate == nil {
-                pro = true
-            }
+    /// Presents an interstitial if one is loaded and the frequency cap allows.
+    func showIfReady() {
+        guard Date.now.timeIntervalSince(lastShown) >= minInterval else {
+            Self.log.info("interstitial skipped: within frequency cap")
+            return
         }
-        isPro = pro
+        guard let ad = interstitial else {
+            Self.log.info("interstitial skipped: none loaded yet (see load failures above)")
+            return
+        }
+        guard let root = Self.topViewController() else {
+            Self.log.info("interstitial skipped: no root view controller")
+            return
+        }
+        lastShown = .now
+        interstitial = nil
+        ad.present(from: root)
+        Self.log.info("interstitial presented")
     }
 
-    /// Returns true if the purchase completed and Pro is now active.
-    @discardableResult
-    func purchase(_ product: Product) async -> Bool {
-        purchaseInFlight = true
-        defer { purchaseInFlight = false }
-        do {
-            switch try await product.purchase() {
-            case .success(let verification):
-                guard case .verified(let transaction) = verification else { return false }
-                await transaction.finish()
-                await updateEntitlement()
-                return isPro
-            case .userCancelled, .pending:
-                return false
-            @unknown default:
-                return false
-            }
-        } catch {
-            return false
-        }
-    }
-
-    func restore() async {
-        try? await AppStore.sync()
-        await updateEntitlement()
-    }
-
-    private func listenForTransactions() {
-        Task { [weak self] in
-            for await update in Transaction.updates {
-                guard case .verified(let transaction) = update else { continue }
-                await transaction.finish()
-                await self?.updateEntitlement()
-            }
-        }
+    private static func topViewController() -> UIViewController? {
+        let scene = UIApplication.shared.connectedScenes
+            .first { $0.activationState == .foregroundActive } as? UIWindowScene
+        var top = scene?.keyWindow?.rootViewController
+        while let presented = top?.presentedViewController { top = presented }
+        return top
     }
 }
 
-/// Paywall offering BOTH a lifetime unlock and an annual subscription. The caller
-/// passes the feature that triggered it for context.
-struct PaywallView: View {
-    var highlight: ProFeature?
+extension InterstitialAdManager: FullScreenContentDelegate {
+    func adDidDismissFullScreenContent(_ ad: FullScreenPresentingAd) { preload() }
 
-    @Environment(EntitlementStore.self) private var store
-    @Environment(\.dismiss) private var dismiss
+    func ad(_ ad: FullScreenPresentingAd,
+            didFailToPresentFullScreenContentWithError error: Error) {
+        Self.log.error("interstitial present failed: \(error.localizedDescription, privacy: .public)")
+        preload()
+    }
+}
 
+// MARK: - Banner ad
+
+/// A bottom-anchored AdMob adaptive banner, sized to its own height and given a
+/// bar background — drop it into a screen's `.safeAreaInset(edge: .bottom)`.
+struct BottomBannerAd: View {
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(spacing: 24) {
-                    header
-                    benefits
-                    options
-                    restoreAndLinks
-                }
-                .padding()
-            }
-            .navigationTitle("Dupless Pro")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Close") { dismiss() }
-                }
-            }
-            .task {
-                if store.lifetime == nil && store.annual == nil { await store.refresh() }
-            }
-            .onChange(of: store.isPro) { _, isPro in
-                if isPro { dismiss() }
-            }
-        }
-    }
-
-    private var header: some View {
-        VStack(spacing: 10) {
-            Image(systemName: highlight?.systemImage ?? "crown.fill")
-                .font(.system(size: 48))
-                .foregroundStyle(.tint)
-                .accessibilityHidden(true)
-            Text("Unlock Dupless Pro")
-                .font(.title2.bold())
-            Text("Everything stays on your device. No ads, no tracking — ever.")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-        }
-        .padding(.top, 8)
-    }
-
-    private var benefits: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            ForEach(ProFeature.allCases) { feature in
-                Label {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(feature.title).font(.headline)
-                        Text(feature.blurb).font(.caption).foregroundStyle(.secondary)
-                    }
-                } icon: {
-                    Image(systemName: feature.systemImage).foregroundStyle(.tint)
-                }
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding()
-        .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 16))
-    }
-
-    @ViewBuilder
-    private var options: some View {
-        if store.isLoadingProducts {
-            ProgressView().padding()
-        } else if store.loadFailed {
-            VStack(spacing: 8) {
-                Text("Couldn't load purchase options.").font(.subheadline)
-                Button("Try Again") { Task { await store.refresh() } }
-            }
-            .padding()
-        } else {
-            VStack(spacing: 12) {
-                if let annual = store.annual {
-                    purchaseButton(annual, caption: "per year")
-                        .buttonStyle(.borderedProminent)
-                        .controlSize(.large)
-                }
-                if let lifetime = store.lifetime {
-                    purchaseButton(lifetime, caption: "one-time purchase")
-                        .buttonStyle(.bordered)
-                        .controlSize(.large)
-                }
-            }
-        }
-    }
-
-    private func purchaseButton(_ product: Product, caption: String) -> some View {
-        Button {
-            Task { await store.purchase(product) }
-        } label: {
-            HStack {
-                VStack(alignment: .leading) {
-                    Text(product.displayName).font(.headline)
-                    Text(caption).font(.caption).foregroundStyle(.secondary)
-                }
-                Spacer()
-                Text(product.displayPrice).font(.headline)
-            }
+        BannerAdView()
+            .frame(height: BannerAdView.adSize.size.height)
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 4)
-        }
-        .disabled(store.purchaseInFlight)
-    }
-
-    private var restoreAndLinks: some View {
-        VStack(spacing: 12) {
-            Button("Restore Purchases") { Task { await store.restore() } }
-                .font(.subheadline)
-                .disabled(store.purchaseInFlight)
-            Text("Payment is charged to your Apple Account. Subscriptions renew automatically until canceled in Settings.")
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-            HStack(spacing: 16) {
-                Link("Privacy Policy", destination: URL(string: "https://veeravn.github.io/cleanshots-site/privacy-policy.html")!)
-                Link("Terms (EULA)", destination: URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!)
-            }
-            .font(.caption2)
-        }
+            .background(.bar)
     }
 }
 
-/// Shown in place of a gated feature when the user isn't Pro, with a CTA to the
-/// paywall.
-struct ProLockView: View {
-    let feature: ProFeature
-    @State private var showPaywall = false
+/// SwiftUI wrapper around an AdMob adaptive banner. DEBUG uses Google's test
+/// banner unit (always fills, safe to tap); RELEASE uses the real one.
+private struct BannerAdView: UIViewRepresentable {
+    #if DEBUG
+    static let adUnitID = "ca-app-pub-3940256099942544/2934735716" // Google test banner
+    #else
+    static let adUnitID = "ca-app-pub-6546029249563930/6636159712"
+    #endif
 
-    var body: some View {
-        VStack(spacing: 16) {
-            Image(systemName: feature.systemImage)
-                .font(.system(size: 52))
-                .foregroundStyle(.tint)
-                .accessibilityHidden(true)
-            Text(feature.title).font(.title2.bold())
-            Text(feature.blurb)
-                .font(.body)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-            Label("A Dupless Pro feature", systemImage: "crown.fill")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            Button {
-                showPaywall = true
-            } label: {
-                Text("Unlock Dupless Pro").frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
-            .padding(.top, 4)
-        }
-        .padding()
-        .frame(maxWidth: 460)
-        .sheet(isPresented: $showPaywall) { PaywallView(highlight: feature) }
+    /// Anchored adaptive banner for the current screen width (fills the width, ~50pt tall).
+    static var adSize: AdSize {
+        currentOrientationAnchoredAdaptiveBanner(width: UIScreen.main.bounds.width)
+    }
+
+    func makeUIView(context: Context) -> BannerView {
+        let banner = BannerView(adSize: Self.adSize)
+        banner.adUnitID = Self.adUnitID
+        banner.rootViewController = Self.rootViewController()
+        banner.load(Request())
+        return banner
+    }
+
+    func updateUIView(_ uiView: BannerView, context: Context) {}
+
+    private static func rootViewController() -> UIViewController? {
+        let scene = UIApplication.shared.connectedScenes
+            .first { $0.activationState == .foregroundActive } as? UIWindowScene
+        return scene?.keyWindow?.rootViewController
     }
 }
+

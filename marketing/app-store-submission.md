@@ -40,12 +40,12 @@ duplicate,cleaner,storage,similar,burst,declutter,gallery,space,best shot,organi
 
 ### Description
 ```
-Dupless cleans up your photo library the private way — entirely on your device. It finds duplicates and near-identical shots, picks the best one in each set, and helps you safely remove the rest. No account, no cloud, no uploads.
+Dupless cleans up your photo library the private way — right on your device. It finds duplicate and near-identical shots, picks the best one in each set, and helps you safely remove the rest. No account, no cloud, and your photos are never uploaded.
 
 WHY DUPLESS
 • Private by design — your photos are analyzed right on your iPhone or iPad and never leave your device.
 • Nothing is deleted automatically. You review every group, and removed photos go to Recently Deleted, so they're always recoverable.
-• Built for the photos you actually take — portrait series, bursts, and drone sequences.
+• Fast, on-device analysis powered by Apple's Vision framework.
 
 FIND WHAT'S REDUNDANT
 • Detects exact duplicates and visually similar shots using on-device perceptual hashing and Apple's Vision framework.
@@ -55,19 +55,16 @@ FIND WHAT'S REDUNDANT
 KEEP THE BEST SHOT
 • Automatically ranks each group by sharpness, exposure, and resolution to recommend the keeper.
 • Tap "Why this one?" for a plain-language explanation of the pick.
-• Protects favorites, edited photos, Live Photos, hidden, shared, and photos with people.
+• Protects your favorites, edited photos, Live Photos, hidden, shared, and photos with people.
 
-ASK IN PLAIN LANGUAGE
-• Type a request like "scan last month, be conservative" — interpreted on-device by Apple Intelligence, with a reliable fallback when it's unavailable.
-• Optionally scope a scan to a place you name; matching looks up where photos were taken using Apple's location service. This is off by default and the only feature that sends anything off your device — and it sends coordinates only, never your photos.
-
-DRONE & BURST
-• Clusters photo sessions by time and location, finds redundant sequences, and preserves genuinely unique angles — including different drone altitudes.
+REVIEW WITH CONFIDENCE
+• Swipe through groups, adjust what's selected, and move only what you choose to Recently Deleted.
+• Browse your library and revisit past results anytime.
 
 SIRI & SHORTCUTS
-• Start scans, review groups, and build albums by voice.
+• Start scans, review groups, and build a best-shots album by voice.
 
-Dupless has no ads, no trackers, no analytics SDKs, and no account. It just makes your library smaller, on your terms.
+Made for iPhone and iPad — reclaim space and tidy your library, on your terms.
 ```
 
 ### What's New (1.0)
@@ -75,8 +72,7 @@ Dupless has no ads, no trackers, no analytics SDKs, and no account. It just make
 First release of Dupless:
 • On-device duplicate and similar-photo detection
 • Best-shot ranking with plain-language explanations
-• Natural-language scans with Apple Intelligence
-• Drone/Burst session cleanup that protects unique angles
+• Protect favorites, edited photos, and Live Photos (each toggleable)
 • Siri & Shortcuts support
 • Optional, off-by-default place-name scan matching
 ```
@@ -101,40 +97,31 @@ First release of Dupless:
 
 ## 4. App Privacy ("nutrition labels")
 
-**Recommended answer to "Do you or your third-party partners collect data from
-this app?": → No, "Data Not Collected".**
+**The app is ad-supported (Google AdMob), so you MUST declare data collection —
+"Data Not Collected" is no longer accurate and would be a misrepresentation.**
 
-### Why this is accurate
-Apple defines "collect" as transmitting data off the device in a way that lets
-**you (the developer) or your partners access it beyond what's needed to service
-the request in real time**. Against that definition:
+### What to declare
+AdMob collects a device advertising identifier and ad-interaction data. At minimum:
 
-- **No developer data collection of any kind.** No account, no analytics, no ads,
-  no third-party SDKs, and no server — confirmed: the codebase contains no
-  networking, analytics, or login code.
-- **Photos never leave the device.** All analysis (hashing, Vision, ranking,
-  on-device Apple Intelligence) runs locally.
-- **The one off-device call is reverse geocoding** photo coordinates via Apple's
-  **MapKit** (`MKReverseGeocodingRequest`). That data is processed by **Apple's
-  own framework** to service the request in real time; you never receive, store,
-  or reuse it, and Apple as the OS platform provider is not a "third-party
-  partner" you declare. It is also **opt-in and off by default**.
+> **Identifiers → Device ID** · Used for: **Third-Party Advertising** · **Used for
+> tracking: Yes** · Linked to identity: No.
 
-So there is no data type that meets Apple's "collection" bar for *you* to
-declare.
+AdMob may also collect Usage Data / Advertising Data / Diagnostics. Reconcile the
+full set against Google's current AdMob "Prepare for earnings/iOS" data-collection
+guidance and the **GoogleMobileAds SDK's bundled privacy manifest**, and declare
+those too. Because tracking is involved, the app must show Apple's **App Tracking
+Transparency** prompt, and `Dupless/PrivacyInfo.xcprivacy` declares
+`NSPrivacyTracking = true` with Google's tracking domains + the collected data
+types (already updated in the repo — verify the domain/data list before submit).
 
-### The one judgment call (so you can confirm)
-The only debatable item is the geocoding location lookup. The position above —
-that framework-only, real-time-serviced, developer-inaccessible data isn't
-developer "collection" — is consistent with Apple's guidance and is the accurate
-declaration. **If you prefer maximum caution**, you may instead declare:
+### Still on-device
+Your **photos never leave the device** — all analysis is local — and you (the
+developer) run no server or account. Only the AdMob SDK collects data, and only
+for advertising.
 
-> **Location → Coarse Location** · Used for: **App Functionality** · **Not** used
-> for tracking · **Not** linked to the user's identity.
-
-Either is defensible; "Data Not Collected" is the more accurate one given you
-never access the data. This is your legal declaration — pick the one you're
-comfortable signing.
+### Location
+The opt-in reverse-geocoding lookup lived in the "Ask Dupless" feature, which is
+**hidden in this build**, so it isn't reachable — no Location to declare.
 
 ---
 
@@ -144,10 +131,6 @@ comfortable signing.
 Dupless is a fully on-device photo-deduplication app. No account or login is required (no demo account needed).
 
 To test: grant Photos access when prompted. The app scans the library for duplicate and similar photos and presents them for review. Nothing is deleted without explicit user action; removals go to Recently Deleted.
-
-"Ask Dupless" interprets a typed request using on-device Apple Intelligence (Foundation Models); when unavailable it falls back to deterministic keyword parsing, so the feature works on all supported devices.
-
-Optional place-name scan scoping is OFF by default. When a user enables it for a scan, the app reverse-geocodes photo coordinates via MapKit (MKReverseGeocodingRequest) to match a named place. Only coordinates are sent to Apple's location service — never photos. This is the only off-device transmission and is disclosed in the privacy policy.
 
 Photo-library permission strings explain both read access (for scanning) and add access (for optionally saving best shots to a new album).
 ```
@@ -168,13 +151,14 @@ inside MapKit) and no custom/proprietary cryptography. You can declare it
 ## 7. Pre-submission checklist
 
 - [ ] **App icon** — 1024×1024 present in the asset catalog ✓ (confirm it has no alpha/transparency)
-- [ ] **iPhone 6.9" screenshots** — 7 captured in `marketing/screenshots/iphone-6.9/` ✓
-- [ ] **iPad 13" screenshots** — 3 captured in `marketing/screenshots/ipad-13/` ✓
-- [x] **Onboarding screenshot refreshed** — `iphone-6.9/1-onboarding.png` re-captured with the current "Find duplicates" title.
+- [x] **iPhone 6.9" screenshots** — 7 captured in `marketing/screenshots/iphone-6.9/` ✓ (re-captured 2026-07-08 against current build: dropped "Ask Dupless" bar and Drone/Burst — both hidden Pro features per `abbf76e` — picked up the AdMob banner and the new Protect Live Photos toggle, and replaced the Drone/Burst slot with Browse Photos)
+- [x] **iPad 13" screenshots** — 3 captured in `marketing/screenshots/ipad-13/` ✓ (re-captured 2026-07-08, same reasons)
 - [x] **Privacy Policy URL is live** — `https://veeravn.github.io/cleanshots-site/privacy-policy.html` (GitHub Pages, public `cleanshots-site` repo)
 - [x] **Support URL is live** — `https://veeravn.github.io/cleanshots-site/`
 - [ ] Listing copy, keywords, categories, age rating entered **(your action)**
-- [ ] App Privacy answered ("Data Not Collected" recommended) **(your action)**
+- [ ] App Privacy answered — **declare data collection for Google AdMob** (Device
+      ID → Third-Party Advertising, used for tracking); NOT "Data Not Collected" **(your action)**
+- [ ] Age rating updated for ads (Apple asks about third-party ads) **(your action)**
 - [ ] Archive in Xcode (Release) and upload via Organizer **(your action)**
 - [ ] Export-compliance answer set / `ITSAppUsesNonExemptEncryption` configured
 

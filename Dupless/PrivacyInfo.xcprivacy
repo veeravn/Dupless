@@ -2,14 +2,43 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<!-- Dupless does not track users and collects no data. All photo
-	     analysis happens on-device; nothing is uploaded. -->
+	<!-- This is the APP's own manifest. Photo analysis is entirely on-device;
+	     the app's own code collects no data and contacts no tracking domain
+	     directly — tracking happens via the bundled Google Mobile Ads (AdMob)
+	     SDK, which ships its own PrivacyInfo.xcprivacy. NSPrivacyTracking is
+	     true because the shipped app tracks (via AdMob) and shows the ATT
+	     prompt.
+
+	     IMPORTANT: leaving NSPrivacyTrackingDomains/NSPrivacyCollectedDataTypes
+	     empty here — on the theory that Apple "aggregates" this file with the
+	     SDK's bundled manifest — fails App Store binary validation with
+	     ITMS-91064 ("NSPrivacyTracking must be true if NSPrivacyTrackingDomains
+	     isn't empty"): each manifest is checked for internal self-consistency
+	     BEFORE aggregation, so this file must stand on its own. Keep at least
+	     one real tracking domain and a matching collected-data-type entry here;
+	     reconcile against Google's current AdMob privacy-manifest guidance if
+	     the domain/purpose changes. -->
 	<key>NSPrivacyTracking</key>
-	<false/>
+	<true/>
 	<key>NSPrivacyTrackingDomains</key>
-	<array/>
+	<array>
+		<string>googleads.g.doubleclick.net</string>
+	</array>
 	<key>NSPrivacyCollectedDataTypes</key>
-	<array/>
+	<array>
+		<dict>
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypeDeviceID</string>
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<true/>
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeThirdPartyAdvertising</string>
+			</array>
+		</dict>
+	</array>
 	<key>NSPrivacyAccessedAPITypes</key>
 	<array>
 		<dict>

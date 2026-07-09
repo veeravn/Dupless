@@ -33,8 +33,44 @@ struct PhotoFlags: Sendable, Equatable, Codable {
     var isShared: Bool = false
     var faceCount: Int = 0
     var personDetected: Bool = false
+    /// Archived Vision feature print per detected face (largest faces first).
+    /// Lets the grouper check whether two photos show the *same people* — so
+    /// different family groupings shot against one backdrop stay apart, which
+    /// face *count* alone can't distinguish. Empty for faceless photos, on the
+    /// Simulator, and for records cached before this field existed. Defaulted so
+    /// the existing cache stays decodable without a schema migration.
+    var faceprints: [Data] = []
+    /// Version of the analysis pipeline that produced this record. Lets a scan
+    /// re-analyze records made by an older pipeline instead of trusting stale
+    /// cached data — e.g. face prints cropped from the old 256px thumbnail are
+    /// useless for identity matching, so bumping `PhotoAnalyzer.analysisVersion`
+    /// forces them to be recomputed at the new resolution. Defaults to 0 (the
+    /// implicit version of every record cached before this field existed), so it's
+    /// migration-free.
+    var analysisVersion: Int = 0
 
     static let none = PhotoFlags()
+}
+
+extension PhotoFlags {
+    /// Custom decode so records written by an OLDER pipeline (whose stored JSON
+    /// lacks newer keys like `faceprints` / `analysisVersion`) still load. Swift's
+    /// synthesized `Codable` does NOT fall back to a property's default for a
+    /// missing key — it throws `keyNotFound` — so a defaulted *non-optional* field
+    /// is only migration-safe with `decodeIfPresent` here. (Encoding stays
+    /// synthesized.) Kept in an extension so the memberwise init is preserved.
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        isFavorite = try c.decodeIfPresent(Bool.self, forKey: .isFavorite) ?? false
+        isEdited = try c.decodeIfPresent(Bool.self, forKey: .isEdited) ?? false
+        isLivePhoto = try c.decodeIfPresent(Bool.self, forKey: .isLivePhoto) ?? false
+        isHidden = try c.decodeIfPresent(Bool.self, forKey: .isHidden) ?? false
+        isShared = try c.decodeIfPresent(Bool.self, forKey: .isShared) ?? false
+        faceCount = try c.decodeIfPresent(Int.self, forKey: .faceCount) ?? 0
+        personDetected = try c.decodeIfPresent(Bool.self, forKey: .personDetected) ?? false
+        faceprints = try c.decodeIfPresent([Data].self, forKey: .faceprints) ?? []
+        analysisVersion = try c.decodeIfPresent(Int.self, forKey: .analysisVersion) ?? 0
+    }
 }
 
 /// A photo ready to be ranked within a group.

@@ -23,18 +23,10 @@ struct DroneBurstSetupView: View {
 
     @State private var startScan = false
 
-    @Environment(EntitlementStore.self) private var entitlements
-
     var body: some View {
-        Group {
-            if entitlements.isPro {
-                setupForm
-            } else {
-                ProLockView(feature: .droneBurst)
-            }
-        }
-        .navigationTitle("Drone / Burst")
-        .navigationBarTitleDisplayMode(.inline)
+        setupForm
+            .navigationTitle("Drone / Burst")
+            .navigationBarTitleDisplayMode(.inline)
     }
 
     private var setupForm: some View {

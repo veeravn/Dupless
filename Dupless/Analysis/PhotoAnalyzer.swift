@@ -5,6 +5,17 @@ import UIKit
 /// feature print + blocking key (MVP 1) plus quality scores, face detection, and
 /// protection flags (MVP 2). Runs off the main actor; on-device only.
 struct PhotoAnalyzer {
+    /// Current analysis-pipeline version, stamped onto every record. Bump when a
+    /// change makes older cached records unusable so a scan recomputes them
+    /// instead of trusting stale data. v1: face prints moved to a high-res crop
+    /// (the 256px-thumbnail prints couldn't distinguish people). v2: force a clean
+    /// re-analysis on top of the Codable-decode fix and the hardened face-print
+    /// render, so devices that cached empty/low-res prints under v1 recompute them.
+    /// v3: face render now allows an iCloud fetch, so records that cached EMPTY
+    /// prints for optimized (not-downloaded) photos under v2 recompute with real
+    /// prints.
+    static let analysisVersion = 3
+
     private let hashService = PerceptualHashService()
     private let featureService = VisionFeaturePrintService()
     private let qualityService = QualityScoringService()
@@ -20,7 +31,15 @@ struct PhotoAnalyzer {
         var quality = qualityService.scores(for: image)
         quality.colorSignature = Self.colorSignature(for: image)
         let (faceCount, personDetected) = faceService.detect(in: image)
-        let flags = Self.flags(for: asset, faceCount: faceCount, personDetected: personDetected)
+        // Face-identity prints need a higher-res crop than the 256px thumbnail
+        // (faces there are too small to tell people apart), so fetch a larger
+        // on-device render — but only when a face was actually detected.
+        var faceprints: [Data] = []
+        if personDetected, let faceImage = await loader.faceSource(for: asset) {
+            faceprints = faceService.faceprints(in: faceImage)
+        }
+        let flags = Self.flags(for: asset, faceCount: faceCount,
+                               personDetected: personDetected, faceprints: faceprints)
 
         return CachedAnalysis(
             id: identifier,
@@ -88,8 +107,10 @@ struct PhotoAnalyzer {
         )
     }
 
-    /// Reads PhotoKit metadata into protection flags.
-    nonisolated static func flags(for asset: PHAsset, faceCount: Int, personDetected: Bool) -> PhotoFlags {
+    /// Reads PhotoKit metadata into protection flags, carrying the face-detection
+    /// result (count + per-face prints) through unchanged.
+    nonisolated static func flags(for asset: PHAsset, faceCount: Int,
+                                  personDetected: Bool, faceprints: [Data]) -> PhotoFlags {
         let resources = PHAssetResource.assetResources(for: asset)
         let isEdited = resources.contains { $0.type == .adjustmentData || $0.type == .fullSizePhoto }
         let isLive = asset.mediaSubtypes.contains(.photoLive)
@@ -102,7 +123,9 @@ struct PhotoAnalyzer {
             isHidden: asset.isHidden,
             isShared: isShared,
             faceCount: faceCount,
-            personDetected: personDetected
+            personDetected: personDetected,
+            faceprints: faceprints,
+            analysisVersion: analysisVersion
         )
     }
 }
