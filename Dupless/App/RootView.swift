@@ -1,6 +1,7 @@
 import SwiftUI
 import UIKit
 import OSLog
+import AppTrackingTransparency
 import GoogleMobileAds
 
 /// Routes between onboarding (no access yet) and the main app (access granted).
@@ -9,6 +10,7 @@ import GoogleMobileAds
 /// the app returns to the foreground so revoked permissions are reflected.
 struct RootView: View {
     @Environment(PhotoAuthorizationManager.self) private var authorization
+    @Environment(InterstitialAdManager.self) private var ads
     @Environment(\.scenePhase) private var scenePhase
 
     @State private var isReady = false
@@ -29,6 +31,15 @@ struct RootView: View {
             authorization.refresh()
             try? await Task.sleep(for: .milliseconds(900))
             withAnimation(.easeOut(duration: 0.35)) { isReady = true }
+            // Request App Tracking Transparency only once the window is
+            // guaranteed key/active — requesting it any earlier (e.g.
+            // concurrently with the launch screen, as a parallel `.task` off
+            // the WindowGroup) can make the system silently skip showing the
+            // prompt. App Review flagged exactly this: "unable to locate the
+            // App Tracking Transparency permission request" on a fresh
+            // install. Must still run before any ad SDK / tracking data
+            // collection, which `bootstrap()` does first.
+            await ads.bootstrap()
         }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { authorization.refresh() }
@@ -105,6 +116,21 @@ final class InterstitialAdManager: NSObject {
     /// "ads". Logs load/present outcomes only (never user content). A "no fill"
     /// load error is expected on a brand-new AdMob account until it starts serving.
     private static let log = Logger(subsystem: "Dupless", category: "ads")
+
+    /// Requests App Tracking Transparency (needed before the advertising
+    /// identifier can be used for personalized ads), starts the ad SDK, and
+    /// preloads the first interstitial. Ads still show non-personalized if the
+    /// user declines tracking. Call only once the window is key/active — see
+    /// the call site in `RootView`.
+    func bootstrap() async {
+        _ = await ATTrackingManager.requestTrackingAuthorization()
+        // Registered test device: this device is served TEST ads in ALL builds
+        // (incl. Release/TestFlight), so tapping an ad here never counts as
+        // invalid activity. Only affects this device — real users get real ads.
+        MobileAds.shared.requestConfiguration.testDeviceIdentifiers = ["b3daf64a8372fa8c15c4602e8da882d6"]
+        await MobileAds.shared.start()
+        preload()
+    }
 
     /// Loads (or reloads) an interstitial for the next opportunity.
     func preload() {
