@@ -31,18 +31,38 @@ struct RootView: View {
             authorization.refresh()
             try? await Task.sleep(for: .milliseconds(900))
             withAnimation(.easeOut(duration: 0.35)) { isReady = true }
-            // Request App Tracking Transparency only once the window is
-            // guaranteed key/active — requesting it any earlier (e.g.
-            // concurrently with the launch screen, as a parallel `.task` off
-            // the WindowGroup) can make the system silently skip showing the
-            // prompt. App Review flagged exactly this: "unable to locate the
-            // App Tracking Transparency permission request" on a fresh
-            // install. Must still run before any ad SDK / tracking data
-            // collection, which `bootstrap()` does first.
+            // Request App Tracking Transparency only once the app is
+            // confirmed .active (not just "some time has passed") —
+            // requesting it while the window isn't truly foregrounded yet
+            // (e.g. concurrently with the launch screen, or immediately after
+            // another system alert like the Photos prompt is still tearing
+            // down) can make the system silently skip showing the prompt.
+            // App Review flagged exactly this: "unable to locate the App
+            // Tracking Transparency permission request" on a fresh install.
+            // Must still run before any ad SDK / tracking data collection,
+            // which `bootstrap()` does first.
+            await waitUntilActive()
             await ads.bootstrap()
         }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { authorization.refresh() }
+        }
+    }
+
+    /// Waits, event-driven (no arbitrary timeout), until the app is actually
+    /// `.active` — not just "some time has passed". A fixed short delay isn't
+    /// enough: on a real device the Photos permission alert (shown moments
+    /// earlier) can sit on screen for as long as the person takes to read and
+    /// tap it, which keeps `applicationState` at `.inactive` the whole time.
+    /// Requesting ATT while inactive makes the system silently resolve it to
+    /// `.notDetermined` with no sheet ever shown — confirmed via the
+    /// `bootstrap()` logging below (appState=1/inactive, resolved status=0/
+    /// notDetermined, nothing on screen) after the previous fixed-delay
+    /// attempt still raced the Photos alert on device.
+    private func waitUntilActive() async {
+        guard UIApplication.shared.applicationState != .active else { return }
+        for await _ in NotificationCenter.default.notifications(named: UIApplication.didBecomeActiveNotification) {
+            if UIApplication.shared.applicationState == .active { return }
         }
     }
 
@@ -123,7 +143,14 @@ final class InterstitialAdManager: NSObject {
     /// user declines tracking. Call only once the window is key/active — see
     /// the call site in `RootView`.
     func bootstrap() async {
-        _ = await ATTrackingManager.requestTrackingAuthorization()
+        Self.log.info("ATT: requesting authorization (appState=\(UIApplication.shared.applicationState.rawValue, privacy: .public))")
+        let status = await ATTrackingManager.requestTrackingAuthorization()
+        // Raw values: 0 notDetermined, 1 restricted, 2 denied, 3 authorized.
+        // If this logs .denied (or .notDetermined) immediately with no sheet
+        // visible on screen, the OS resolved it without ever presenting UI —
+        // check Settings > Privacy & Security > Tracking is on and the app
+        // isn't already listed there from a prior install.
+        Self.log.info("ATT: resolved status=\(status.rawValue, privacy: .public)")
         // Registered test device: this device is served TEST ads in ALL builds
         // (incl. Release/TestFlight), so tapping an ad here never counts as
         // invalid activity. Only affects this device — real users get real ads.
