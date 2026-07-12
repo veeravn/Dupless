@@ -83,15 +83,22 @@ First release of Dupless:
 
 | Field | Value | Status |
 |---|---|---|
-| Privacy Policy URL | `https://veeravn.github.io/cleanshots-site/privacy-policy.html` | ✓ live |
-| Support URL | `https://veeravn.github.io/cleanshots-site/` | ✓ live |
-| Marketing URL (optional) | `https://veeravn.github.io/cleanshots-site/` | optional |
+| Privacy Policy URL | `https://veeravn.github.io/dupless-site/privacy-policy.html` | ✓ live |
+| Support URL | `https://veeravn.github.io/dupless-site/` | ✓ live |
+| Marketing URL (optional) | `https://veeravn.github.io/dupless-site/` | optional |
 
 > **Hosting:** these pages are served by GitHub Pages from the dedicated public
-> repo **`veeravn/cleanshots-site`** (this app repo is private, and Pages on a
+> repo **`veeravn/dupless-site`** (this app repo is private, and Pages on a
 > private repo needs a paid plan). The site's source mirrors `docs/`
 > (`index.html` + `privacy-policy.html`); update the public repo if those pages
-> change. Both URLs are verified returning HTTP 200.
+> change. Both URLs are verified returning HTTP 200. `app-ads.txt` (AdMob
+> seller verification, `pub-6546029249563930`) also lives at the root of that
+> repo, served from `https://veeravn.github.io/dupless-site/app-ads.txt`.
+>
+> Note: an older `veeravn/cleanshots-site` repo also still exists from before
+> the CleanShots→Dupless rebrand but is **not** the one App Store Connect and
+> AdMob point at — `dupless-site` is the live one; don't edit the old repo by
+> mistake.
 
 ---
 
@@ -153,8 +160,8 @@ inside MapKit) and no custom/proprietary cryptography. You can declare it
 - [ ] **App icon** — 1024×1024 present in the asset catalog ✓ (confirm it has no alpha/transparency)
 - [x] **iPhone 6.9" screenshots** — 7 captured in `marketing/screenshots/iphone-6.9/` ✓ (re-captured 2026-07-08 against current build: dropped "Ask Dupless" bar and Drone/Burst — both hidden Pro features per `abbf76e` — picked up the AdMob banner and the new Protect Live Photos toggle, and replaced the Drone/Burst slot with Browse Photos)
 - [x] **iPad 13" screenshots** — 3 captured in `marketing/screenshots/ipad-13/` ✓ (re-captured 2026-07-08, same reasons)
-- [x] **Privacy Policy URL is live** — `https://veeravn.github.io/cleanshots-site/privacy-policy.html` (GitHub Pages, public `cleanshots-site` repo)
-- [x] **Support URL is live** — `https://veeravn.github.io/cleanshots-site/`
+- [x] **Privacy Policy URL is live** — `https://veeravn.github.io/dupless-site/privacy-policy.html` (GitHub Pages, public `dupless-site` repo)
+- [x] **Support URL is live** — `https://veeravn.github.io/dupless-site/`
 - [ ] Listing copy, keywords, categories, age rating entered **(your action)**
 - [ ] App Privacy answered — **declare data collection for Google AdMob** (Device
       ID → Third-Party Advertising, used for tracking); NOT "Data Not Collected" **(your action)**
