@@ -237,20 +237,44 @@ private struct BannerAdView: UIViewRepresentable {
     static let adUnitID = "ca-app-pub-6546029249563930/6636159712"
     #endif
 
+    fileprivate static let log = Logger(subsystem: "Dupless", category: "ads")
+
     /// Anchored adaptive banner for the current screen width (fills the width, ~50pt tall).
     static var adSize: AdSize {
         currentOrientationAnchoredAdaptiveBanner(width: UIScreen.main.bounds.width)
     }
 
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
     func makeUIView(context: Context) -> BannerView {
         let banner = BannerView(adSize: Self.adSize)
         banner.adUnitID = Self.adUnitID
         banner.rootViewController = Self.rootViewController()
+        banner.delegate = context.coordinator
         banner.load(Request())
         return banner
     }
 
     func updateUIView(_ uiView: BannerView, context: Context) {}
+
+    /// Retries a failed load after a delay. The very first `load()` (called
+    /// from `makeUIView` as soon as Home appears) can race
+    /// `MobileAds.shared.start()` finishing — for a returning user Home can
+    /// appear before the ATT-gated startup sequence in `RootView` completes —
+    /// and with no retry a race like that left the banner permanently blank.
+    final class Coordinator: NSObject, BannerViewDelegate {
+        func bannerViewDidReceiveAd(_ bannerView: BannerView) {
+            BannerAdView.log.info("banner loaded")
+        }
+
+        func bannerView(_ bannerView: BannerView, didFailToReceiveAdWithError error: Error) {
+            BannerAdView.log.error("banner load failed: \(error.localizedDescription, privacy: .public)")
+            Task {
+                try? await Task.sleep(for: .seconds(30))
+                bannerView.load(Request())
+            }
+        }
+    }
 
     private static func rootViewController() -> UIViewController? {
         let scene = UIApplication.shared.connectedScenes
