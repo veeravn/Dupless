@@ -145,6 +145,17 @@ final class InterstitialAdManager: NSObject {
 
     private var interstitial: InterstitialAd?
 
+    /// Whether an interstitial has already been shown in the current "active
+    /// stretch" — reset by a fresh app launch (naturally, since this is a new
+    /// instance) or by the app having been backgrounded for at least
+    /// `minInterval` before returning to the foreground. NOT persisted: a
+    /// user doing several scan -> review -> delete -> scan cycles back to
+    /// back, without ever leaving the app, sees at most one ad; stepping
+    /// away and coming back later gets another. In-memory only, observed via
+    /// `observeBackgrounding()`.
+    private var hasShownThisStretch = false
+    private var backgroundedAt: Date?
+
     /// Diagnostics — view in Xcode/Console with subsystem "Dupless", category
     /// "ads". Logs load/present outcomes only (never user content). A "no fill"
     /// load error is expected on a brand-new AdMob account until it starts serving.
@@ -170,11 +181,32 @@ final class InterstitialAdManager: NSObject {
         MobileAds.shared.requestConfiguration.testDeviceIdentifiers = ["b3daf64a8372fa8c15c4602e8da882d6"]
         await MobileAds.shared.start()
         preload()
+        observeBackgrounding()
     }
 
     /// Loads (or reloads) an interstitial for the next opportunity.
     func preload() {
         Task { await load() }
+    }
+
+    /// Fire-and-forget observers (for the lifetime of the app) that record
+    /// when the app backgrounds and, on return, reset `hasShownThisStretch`
+    /// if the app was away for at least `minInterval` — otherwise a quick
+    /// switch to another app and back (e.g. checking a text) would count as
+    /// "leaving".
+    private func observeBackgrounding() {
+        Task {
+            for await _ in NotificationCenter.default.notifications(named: UIApplication.didEnterBackgroundNotification) {
+                backgroundedAt = .now
+            }
+        }
+        Task {
+            for await _ in NotificationCenter.default.notifications(named: UIApplication.didBecomeActiveNotification) {
+                if let backgroundedAt, Date.now.timeIntervalSince(backgroundedAt) >= minInterval {
+                    hasShownThisStretch = false
+                }
+            }
+        }
     }
 
     private func load() async {
@@ -189,8 +221,13 @@ final class InterstitialAdManager: NSObject {
         }
     }
 
-    /// Presents an interstitial if one is loaded and the frequency cap allows.
+    /// Presents an interstitial if one is loaded and both the per-stretch cap
+    /// and frequency cap allow it.
     func showIfReady() {
+        guard !hasShownThisStretch else {
+            Self.log.info("interstitial skipped: already shown since the app was last opened/resumed")
+            return
+        }
         guard Date.now.timeIntervalSince(lastShown) >= minInterval else {
             Self.log.info("interstitial skipped: within frequency cap")
             return
@@ -204,6 +241,7 @@ final class InterstitialAdManager: NSObject {
             return
         }
         lastShown = .now
+        hasShownThisStretch = true
         interstitial = nil
         ad.present(from: root)
         Self.log.info("interstitial presented")
