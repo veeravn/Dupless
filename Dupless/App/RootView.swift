@@ -129,7 +129,20 @@ final class InterstitialAdManager: NSObject {
 
     /// Don't present more than one interstitial per this interval.
     private let minInterval: TimeInterval = 3 * 60
-    private var lastShown = Date.distantPast
+
+    /// Persisted (UserDefaults), not just in-memory — InterstitialAdManager is
+    /// re-created from scratch on every app launch, so an in-memory-only
+    /// `lastShown` reset to .distantPast on every relaunch, meaning the first
+    /// scan after reopening the app always showed an ad regardless of how
+    /// recently one was shown in a prior session. Reported as "every time I
+    /// start scanning, ads show up" — literal, not just a frequency-feels-off
+    /// complaint, since most real sessions are separate app opens.
+    private static let lastShownKey = "interstitialLastShown"
+    private var lastShown: Date {
+        get { Date(timeIntervalSince1970: UserDefaults.standard.double(forKey: Self.lastShownKey)) }
+        set { UserDefaults.standard.set(newValue.timeIntervalSince1970, forKey: Self.lastShownKey) }
+    }
+
     private var interstitial: InterstitialAd?
 
     /// Diagnostics — view in Xcode/Console with subsystem "Dupless", category
