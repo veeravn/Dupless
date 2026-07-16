@@ -105,6 +105,49 @@ final class BestShotRankerTests: XCTestCase {
         XCTAssertTrue(result.suggestedRemovalIdentifiers.isEmpty)
     }
 
+    func testConfidentPairAutoSelectsPeoplePhoto() {
+        // A pair (small group) with a detected face in the non-keeper: still
+        // confidently a duplicate, so it's auto-selected rather than protected.
+        let result = ranker.rank([photo("keeper", sharp: 0.9), photo("dupe", sharp: 0.2, person: true)])
+        XCTAssertEqual(result.keeperIdentifier, "keeper")
+        XCTAssertEqual(result.suggestedRemovalIdentifiers, ["dupe"])
+        XCTAssertFalse(result.protectedIdentifiers.contains("dupe"))
+    }
+
+    func testHighConfidenceGroupAutoSelectsPeoplePhoto() {
+        // Three photos, but a very high match confidence makes the group
+        // confident enough to loosen the people-only protection.
+        let result = ranker.rank([
+            photo("keeper", sharp: 0.9),
+            photo("dupe1", sharp: 0.3, person: true),
+            photo("dupe2", sharp: 0.2, person: true),
+        ], groupConfidence: 0.97)
+        XCTAssertEqual(Set(result.suggestedRemovalIdentifiers), ["dupe1", "dupe2"])
+        XCTAssertTrue(result.protectedIdentifiers.isEmpty)
+    }
+
+    func testLowConfidenceLargeGroupStillProtectsPeoplePhoto() {
+        // Neither small nor confident: people protection still holds.
+        let result = ranker.rank([
+            photo("keeper", sharp: 0.9),
+            photo("p1", sharp: 0.3, person: true),
+            photo("p2", sharp: 0.2),
+        ], groupConfidence: 0.6)
+        XCTAssertEqual(result.suggestedRemovalIdentifiers, ["p2"])
+        XCTAssertTrue(result.protectedIdentifiers.contains("p1"))
+    }
+
+    func testConfidentGroupStillProtectsFavoriteAndEditedPeoplePhoto() {
+        // Confidence only loosens the people-only case; other hard protections
+        // (favorite, edited, Live Photo, hidden, shared) always hold.
+        let result = ranker.rank([
+            photo("keeper", sharp: 0.9),
+            photo("fav", sharp: 0.2, favorite: true, person: true),
+        ])
+        XCTAssertEqual(result.suggestedRemovalIdentifiers, [])
+        XCTAssertTrue(result.protectedIdentifiers.contains("fav"))
+    }
+
     func testScoreWeightingFavorsSharpness() {
         // Sharpness has the largest weight (0.30); a big sharpness lead should win
         // even against a resolution disadvantage.

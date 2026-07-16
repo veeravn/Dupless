@@ -16,6 +16,7 @@ struct DuplicateGroupDetailView: View {
     @State private var removalSelection: Set<String> = []
     @State private var showConfirmation = false
     @State private var inspecting: InspectorTarget?
+    @State private var errorMessage: String?
 
     private let columns = [GridItem(.adaptive(minimum: 110), spacing: 8)]
 
@@ -70,8 +71,17 @@ struct DuplicateGroupDetailView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
+            if let errorMessage {
+                Text(errorMessage)
+                    .font(.caption)
+                    .foregroundStyle(.red)
+            }
             Button(role: .destructive) {
-                showConfirmation = true
+                if AppSettings.skipDeleteConfirmation {
+                    Task { await runCleanup() }
+                } else {
+                    showConfirmation = true
+                }
             } label: {
                 Text(removalSelection.isEmpty
                      ? "Select photos to remove"
@@ -86,6 +96,12 @@ struct DuplicateGroupDetailView: View {
         .background(.bar)
     }
 
+    private func runCleanup() async {
+        errorMessage = nil
+        let result = await performCleanup()
+        if case .failed(let message) = result { errorMessage = message }
+    }
+
     private var protectedCount: Int { ranking?.protectedIdentifiers.count ?? 0 }
 
     private func toggle(_ id: String) {
@@ -97,7 +113,7 @@ struct DuplicateGroupDetailView: View {
         assets = AssetResolver.assets(for: group.memberIdentifiers)
         let cached = cachedAnalyses(for: group.memberIdentifiers)
         let rankables = group.memberIdentifiers.compactMap { cached[$0]?.rankablePhoto }
-        let result = BestShotRanker(policy: AppSettings.protectionPolicy).rank(rankables)
+        let result = BestShotRanker(policy: AppSettings.protectionPolicy).rank(rankables, groupConfidence: group.confidence)
         ranking = result
         // Protection-aware default: pre-select only the suggested (non-protected) removals.
         removalSelection = Set(result.suggestedRemovalIdentifiers)

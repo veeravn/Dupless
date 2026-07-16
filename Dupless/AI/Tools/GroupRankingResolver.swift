@@ -13,7 +13,7 @@ enum GroupRankingResolver {
         )) ?? []
         let cached = Dictionary(uniqueKeysWithValues: records.map { ($0.assetLocalIdentifier, $0.cachedAnalysis) })
         let rankables = group.memberIdentifiers.compactMap { cached[$0]?.rankablePhoto }
-        return BestShotRanker(policy: AppSettings.protectionPolicy).rank(rankables)
+        return BestShotRanker(policy: AppSettings.protectionPolicy).rank(rankables, groupConfidence: group.confidence)
     }
 
     /// All groups paired with their rankings, highest-confidence first.

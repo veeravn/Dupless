@@ -18,6 +18,7 @@
 		2715494E2FEED8D70078C02F /* ThermalPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2715490A2FEED8D70078C02F /* ThermalPolicy.swift */; };
 		2715494F2FEED8D70078C02F /* AIAvailability.swift in Sources */ = {isa = PBXBuildFile; fileRef = 271548F32FEED8D70078C02F /* AIAvailability.swift */; };
 		271549502FEED8D70078C02F /* CleanupConfirmationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2715491A2FEED8D70078C02F /* CleanupConfirmationView.swift */; };
+		27F1A0022FEED8D70078C030 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27F1A0012FEED8D70078C030 /* SettingsView.swift */; };
 		271549512FEED8D70078C02F /* AppRouting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2715490D2FEED8D70078C02F /* AppRouting.swift */; };
 		271549522FEED8D70078C02F /* PhotoImageLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 271549332FEED8D70078C02F /* PhotoImageLoader.swift */; };
 		271549532FEED8D70078C02F /* ScanSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 271549222FEED8D70078C02F /* ScanSetupView.swift */; };
@@ -103,6 +104,7 @@
 		271549A32FEED8D70078C02F /* ThermalPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2715490A2FEED8D70078C02F /* ThermalPolicy.swift */; };
 		271549A42FEED8D70078C02F /* AIAvailability.swift in Sources */ = {isa = PBXBuildFile; fileRef = 271548F32FEED8D70078C02F /* AIAvailability.swift */; };
 		271549A52FEED8D70078C02F /* CleanupConfirmationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2715491A2FEED8D70078C02F /* CleanupConfirmationView.swift */; };
+		27F1A0032FEED8D70078C030 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27F1A0012FEED8D70078C030 /* SettingsView.swift */; };
 		271549A62FEED8D70078C02F /* AppRouting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2715490D2FEED8D70078C02F /* AppRouting.swift */; };
 		271549A72FEED8D70078C02F /* PhotoImageLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 271549332FEED8D70078C02F /* PhotoImageLoader.swift */; };
 		271549A82FEED8D70078C02F /* ScanSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 271549222FEED8D70078C02F /* ScanSetupView.swift */; };
@@ -281,6 +283,7 @@
 		271549172FEED8D70078C02F /* PhotoGridModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoGridModel.swift; sourceTree = "<group>"; };
 		271549182FEED8D70078C02F /* PhotoGridView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoGridView.swift; sourceTree = "<group>"; };
 		2715491A2FEED8D70078C02F /* CleanupConfirmationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupConfirmationView.swift; sourceTree = "<group>"; };
+		27F1A0012FEED8D70078C030 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		2715491B2FEED8D70078C02F /* DuplicateGroupDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuplicateGroupDetailView.swift; sourceTree = "<group>"; };
 		2715491C2FEED8D70078C02F /* DuplicateGroupListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuplicateGroupListView.swift; sourceTree = "<group>"; };
 		2715491D2FEED8D70078C02F /* PhotoInspectorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoInspectorView.swift; sourceTree = "<group>"; };
@@ -532,6 +535,14 @@
 			path = Scan;
 			sourceTree = "<group>";
 		};
+		27F1A0042FEED8D70078C030 /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				27F1A0012FEED8D70078C030 /* SettingsView.swift */,
+			);
+			path = Settings;
+			sourceTree = "<group>";
+		};
 		271549242FEED8D70078C02F /* Features */ = {
 			isa = PBXGroup;
 			children = (
@@ -540,6 +551,7 @@
 				271549192FEED8D70078C02F /* PhotoGrid */,
 				2715491F2FEED8D70078C02F /* Review */,
 				271549232FEED8D70078C02F /* Scan */,
+				27F1A0042FEED8D70078C030 /* Settings */,
 			);
 			path = Features;
 			sourceTree = "<group>";
@@ -793,6 +805,7 @@
 				271549A32FEED8D70078C02F /* ThermalPolicy.swift in Sources */,
 				271549A42FEED8D70078C02F /* AIAvailability.swift in Sources */,
 				271549A52FEED8D70078C02F /* CleanupConfirmationView.swift in Sources */,
+				27F1A0022FEED8D70078C030 /* SettingsView.swift in Sources */,
 				271549A62FEED8D70078C02F /* AppRouting.swift in Sources */,
 				271549A72FEED8D70078C02F /* PhotoImageLoader.swift in Sources */,
 				271549A82FEED8D70078C02F /* ScanSetupView.swift in Sources */,
@@ -879,6 +892,7 @@
 				2715494E2FEED8D70078C02F /* ThermalPolicy.swift in Sources */,
 				2715494F2FEED8D70078C02F /* AIAvailability.swift in Sources */,
 				271549502FEED8D70078C02F /* CleanupConfirmationView.swift in Sources */,
+				27F1A0032FEED8D70078C030 /* SettingsView.swift in Sources */,
 				271549512FEED8D70078C02F /* AppRouting.swift in Sources */,
 				271549522FEED8D70078C02F /* PhotoImageLoader.swift in Sources */,
 				271549532FEED8D70078C02F /* ScanSetupView.swift in Sources */,
@@ -1176,7 +1190,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 26.5;
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.vnaidu.Dupless;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1231,7 +1245,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 26.5;
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.vnaidu.Dupless;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1259,7 +1273,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				MACOSX_DEPLOYMENT_TARGET = 26.5;
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.vnaidu.DuplessTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
@@ -1284,7 +1298,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				MACOSX_DEPLOYMENT_TARGET = 26.5;
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.vnaidu.DuplessTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;

@@ -26,6 +26,7 @@ enum AppRoute: Hashable {
     case review
     case resume
     case browse
+    case settings
 }
 
 /// Bridges App Intents to in-app navigation. An intent sets `route`; the root
@@ -48,6 +49,9 @@ enum AppSettings {
     private static let defaultModeKey = "defaultDedupeMode"
     private static let locationMatchingKey = "locationMatchingEnabled"
     static let protectLivePhotosKey = "protectLivePhotos"
+    static let includeScreenshotsKey = "includeScreenshots"
+    static let excludeFavoritesKey = "excludeFavorites"
+    static let skipDeleteConfirmationKey = "skipDeleteConfirmation"
 
     static var defaultSensitivity: SimilaritySensitivity {
         get {
@@ -71,6 +75,28 @@ enum AppSettings {
     static var protectLivePhotos: Bool {
         get { UserDefaults.standard.object(forKey: protectLivePhotosKey) as? Bool ?? true }
         set { UserDefaults.standard.set(newValue, forKey: protectLivePhotosKey) }
+    }
+
+    /// Whether scans include screenshots. On by default. Moved out of the
+    /// per-scan setup screen into Settings.
+    static var includeScreenshots: Bool {
+        get { UserDefaults.standard.object(forKey: includeScreenshotsKey) as? Bool ?? true }
+        set { UserDefaults.standard.set(newValue, forKey: includeScreenshotsKey) }
+    }
+
+    /// Whether favorites are excluded from scans. On by default. Moved out of
+    /// the per-scan setup screen into Settings.
+    static var excludeFavorites: Bool {
+        get { UserDefaults.standard.object(forKey: excludeFavoritesKey) as? Bool ?? true }
+        set { UserDefaults.standard.set(newValue, forKey: excludeFavoritesKey) }
+    }
+
+    /// When on, the "Move to Recently Deleted" confirmation sheet is skipped —
+    /// cleanup goes straight to PhotoKit's own system confirmation. Off by
+    /// default so first-time users still see the explanation.
+    static var skipDeleteConfirmation: Bool {
+        get { UserDefaults.standard.bool(forKey: skipDeleteConfirmationKey) }
+        set { UserDefaults.standard.set(newValue, forKey: skipDeleteConfirmationKey) }
     }
 
     /// The active protection policy: all hard protections on, with Live Photo

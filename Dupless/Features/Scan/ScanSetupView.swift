@@ -20,9 +20,6 @@ struct ScanSetupView: View {
     @State private var selectedAlbumID: String?
     @State private var isLoadingAlbums = false
 
-    @State private var includeScreenshots = true
-    @State private var excludeFavorites = true
-    @AppStorage(AppSettings.protectLivePhotosKey) private var protectLivePhotos = true
     @State private var sensitivity: SimilaritySensitivity = AppSettings.defaultSensitivity
 
     @State private var startScan = false
@@ -51,16 +48,6 @@ struct ScanSetupView: View {
                     DatePicker("From", selection: $startDate, displayedComponents: .date)
                     DatePicker("To", selection: $endDate, displayedComponents: .date)
                 }
-            }
-
-            Section {
-                Toggle("Include screenshots", isOn: $includeScreenshots)
-                Toggle("Protect favorites", isOn: $excludeFavorites)
-                Toggle("Protect Live Photos", isOn: $protectLivePhotos)
-            } header: {
-                Text("Options")
-            } footer: {
-                Text("Protected Live Photos are grouped but never pre-selected for removal. Turn off to allow cleaning up duplicate Live Photos.")
             }
 
             Section {
@@ -105,7 +92,7 @@ struct ScanSetupView: View {
             ScanProgressView(
                 job: .fresh(
                     scope: resolvedScope,
-                    options: ScanOptions(includeScreenshots: includeScreenshots, excludeFavorites: excludeFavorites),
+                    options: ScanOptions(includeScreenshots: AppSettings.includeScreenshots, excludeFavorites: AppSettings.excludeFavorites),
                     sensitivity: sensitivity
                 )
             )
