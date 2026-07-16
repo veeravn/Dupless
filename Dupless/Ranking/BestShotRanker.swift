@@ -16,11 +16,19 @@ struct GroupRanking: Sendable, Equatable {
 struct BestShotRanker {
     private let protection: ProtectionPolicyEngine
 
+    /// A group this small, or a match this confident, is treated as an obvious
+    /// duplicate set — confident enough to auto-select a non-keeper photo for
+    /// removal even if its only protection reason is a detected face. Other
+    /// hard protections (favorite, edited, Live Photo, hidden, shared) always
+    /// hold regardless of confidence.
+    private static let smallGroupSize = 2
+    private static let confidentMatchThreshold = 0.95
+
     init(policy: ProtectionPolicy = .default) {
         self.protection = ProtectionPolicyEngine(policy: policy)
     }
 
-    func rank(_ photos: [RankablePhoto]) -> GroupRanking {
+    func rank(_ photos: [RankablePhoto], groupConfidence: Double? = nil) -> GroupRanking {
         guard !photos.isEmpty else {
             return GroupRanking(keeperIdentifier: nil, suggestedRemovalIdentifiers: [],
                                 protectedIdentifiers: [], finalScores: [:], badges: [:])
@@ -28,7 +36,11 @@ struct BestShotRanker {
 
         let maxPixels = photos.map(\.pixelCount).max() ?? 1
         let scores = Dictionary(uniqueKeysWithValues: photos.map { ($0.id, finalScore($0, maxPixels: maxPixels)) })
-        let badges = computeBadges(photos, maxPixels: maxPixels)
+        let isConfidentGroup = photos.count <= Self.smallGroupSize
+            || (groupConfidence ?? 0) >= Self.confidentMatchThreshold
+
+        let protectedSet = protectedSet(for: photos, isConfidentGroup: isConfidentGroup)
+        let badges = computeBadges(photos, maxPixels: maxPixels, protectedSet: protectedSet)
 
         // Keeper: highest score; ties (similar quality) broken per the spec.
         let ranked = photos.sorted { a, b in
@@ -40,9 +52,6 @@ struct BestShotRanker {
         let keeper = ranked.first
         let keeperID = keeper?.id
 
-        let protectedIDs = photos.filter { protection.isProtected($0.flags) }.map(\.id)
-        let protectedSet = Set(protectedIDs)
-
         let removals = ranked
             .filter { $0.id != keeperID && !protectedSet.contains($0.id) }
             .map(\.id)
@@ -50,10 +59,21 @@ struct BestShotRanker {
         return GroupRanking(
             keeperIdentifier: keeperID,
             suggestedRemovalIdentifiers: removals,
-            protectedIdentifiers: protectedIDs,
+            protectedIdentifiers: Array(protectedSet),
             finalScores: scores,
             badges: badges
         )
+    }
+
+    /// Photos the protection policy keeps. In a confident group, a photo whose
+    /// *only* protection reason is a detected face is no longer held back.
+    private func protectedSet(for photos: [RankablePhoto], isConfidentGroup: Bool) -> Set<String> {
+        Set(photos.compactMap { photo -> String? in
+            let reasons = protection.protectionReasons(for: photo.flags)
+            guard !reasons.isEmpty else { return nil }
+            if isConfidentGroup && reasons == [.hasPeople] { return nil }
+            return photo.id
+        })
     }
 
     // MARK: - Scoring
@@ -90,7 +110,7 @@ struct BestShotRanker {
 
     // MARK: - Badges
 
-    private func computeBadges(_ photos: [RankablePhoto], maxPixels: Int) -> [String: [QualityBadge]] {
+    private func computeBadges(_ photos: [RankablePhoto], maxPixels: Int, protectedSet: Set<String>) -> [String: [QualityBadge]] {
         let sharpestID = photos.max { $0.quality.sharpness < $1.quality.sharpness }?.id
         let bestExposureID = photos.max { $0.quality.exposure < $1.quality.exposure }?.id
 
@@ -109,7 +129,7 @@ struct BestShotRanker {
             if photo.flags.isLivePhoto { badges.append(.livePhoto) }
             if photo.flags.personDetected { badges.append(.hasPeople) }
             if photo.quality.motionBlur > 0.6 || photo.quality.sharpness < 0.3 { badges.append(.blurry) }
-            if protection.isProtected(photo.flags) { badges.append(.protected) }
+            if protectedSet.contains(photo.id) { badges.append(.protected) }
             result[photo.id] = badges
         }
         return result

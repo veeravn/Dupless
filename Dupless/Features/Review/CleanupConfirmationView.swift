@@ -72,9 +72,7 @@ struct CleanupConfirmationView: View {
             let result = await onConfirm()
             isWorking = false
             switch result {
-            case .success:
-                dismiss()
-            case .cancelled:
+            case .success, .cancelled:
                 dismiss()
             case .failed(let message):
                 errorMessage = message

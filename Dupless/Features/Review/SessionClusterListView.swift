@@ -85,6 +85,7 @@ struct SessionClusterDetailView: View {
     @State private var removalSelection: Set<String> = []
     @State private var showConfirmation = false
     @State private var albumMessage: String?
+    @State private var errorMessage: String?
 
     private let columns = [GridItem(.adaptive(minimum: 100), spacing: 8)]
 
@@ -153,8 +154,17 @@ struct SessionClusterDetailView: View {
             .buttonStyle(.bordered)
             .disabled(cluster.recommendedBestShotIds.isEmpty)
 
+            if let errorMessage {
+                Text(errorMessage)
+                    .font(.caption)
+                    .foregroundStyle(.red)
+            }
             Button(role: .destructive) {
-                showConfirmation = true
+                if AppSettings.skipDeleteConfirmation {
+                    Task { await runCleanup() }
+                } else {
+                    showConfirmation = true
+                }
             } label: {
                 Text(removalSelection.isEmpty ? "Select photos to remove" : "Move \(removalSelection.count) to Recently Deleted")
                     .frame(maxWidth: .infinity)
@@ -165,6 +175,12 @@ struct SessionClusterDetailView: View {
         }
         .padding()
         .background(.bar)
+    }
+
+    private func runCleanup() async {
+        errorMessage = nil
+        let result = await performCleanup()
+        if case .failed(let message) = result { errorMessage = message }
     }
 
     private func createAlbum() async {

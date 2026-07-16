@@ -40,7 +40,7 @@ struct HomeView: View {
         }
     }
 
-    // MARK: - iPhone (unchanged)
+    // MARK: - iPhone
 
     private var iPhoneLayout: some View {
         NavigationStack(path: $path) {
@@ -76,8 +76,11 @@ struct HomeView: View {
                 }
             }
             .navigationTitle("Dupless")
-            .navigationDestination(for: AppRoute.self, destination: destination)
+            .navigationDestination(for: AppRoute.self) { route in
+                destination(for: route).toolbar { if route != .settings { settingsToolbarItem } }
+            }
             .safeAreaInset(edge: .bottom) { BottomBannerAd() }
+            .toolbar { settingsToolbarItem }
         }
     }
 
@@ -115,7 +118,10 @@ struct HomeView: View {
         } detail: {
             NavigationStack(path: $path) {
                 WelcomeDetail()
-                    .navigationDestination(for: AppRoute.self, destination: destination)
+                    .toolbar { settingsToolbarItem }
+                    .navigationDestination(for: AppRoute.self) { route in
+                        destination(for: route).toolbar { if route != .settings { settingsToolbarItem } }
+                    }
             }
         }
         .onChange(of: sidebarSelection) { _, item in
@@ -148,6 +154,18 @@ struct HomeView: View {
             ResumeDestination()
         case .browse:
             PhotoGridView()
+        case .settings:
+            SettingsView()
+        }
+    }
+
+    @ToolbarContentBuilder
+    private var settingsToolbarItem: some ToolbarContent {
+        ToolbarItem(placement: .topBarTrailing) {
+            NavigationLink(value: AppRoute.settings) {
+                Image(systemName: "gearshape")
+            }
+            .accessibilityLabel("Settings")
         }
     }
 
